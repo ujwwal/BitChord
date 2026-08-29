@@ -5,6 +5,8 @@ namespace BitChord.WinUI;
 
 public sealed class AppShellViewModel
 {
+    private readonly BitChordService _service = new();
+
     public ObservableCollection<FeedSection> HomeSections { get; } = new();
     public ObservableCollection<FeedSection> ExploreSections { get; } = new();
     public ObservableCollection<LibraryTile> LibraryTiles { get; } = new();
@@ -17,6 +19,7 @@ public sealed class AppShellViewModel
     public AppShellViewModel()
     {
         LoadDemoData();
+        _ = LoadLiveDataAsync();
     }
 
     private void LoadDemoData()
@@ -72,6 +75,50 @@ public sealed class AppShellViewModel
         SearchSuggestions.Add("midnight drive");
         SearchSuggestions.Add("sunset echoes");
         SearchSuggestions.Add("night bloom");
+    }
+
+    public async Task LoadLiveDataAsync(CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            IReadOnlyList<HomeShelf> home = await _service.GetHomeAsync(cancellationToken).ConfigureAwait(false);
+            if (home.Count > 0)
+            {
+                var updated = home.Select(shelf => new FeedSection(shelf.Title, shelf.Items.Select(item => new FeedCard(item.Title, item.Subtitle, item.ThumbnailUrl ?? "")))).ToList();
+                HomeSections.Clear();
+                foreach (var section in updated)
+                {
+                    HomeSections.Add(section);
+                }
+            }
+
+            IReadOnlyList<HomeShelf> explore = await _service.GetExploreAsync(cancellationToken).ConfigureAwait(false);
+            if (explore.Count > 0)
+            {
+                var updated = explore.Select(shelf => new FeedSection(shelf.Title, shelf.Items.Select(item => new FeedCard(item.Title, item.Subtitle, item.ThumbnailUrl ?? "")))).ToList();
+                ExploreSections.Clear();
+                foreach (var section in updated)
+                {
+                    ExploreSections.Add(section);
+                }
+            }
+
+            IReadOnlyList<SearchResult> results = await _service.SearchAsync("midnight drive", SelectedSearchFilter, cancellationToken).ConfigureAwait(false);
+            SearchResults.Clear();
+            foreach (var result in results.Take(6))
+            {
+                SearchResults.Add(result switch
+                {
+                    SearchResult.Track track => new SearchResultTile(track.Song.Title, $"Track • {track.Song.Artist}"),
+                    SearchResult.Browse browse => new SearchResultTile(browse.Item.Title, $"{browse.Item.Type} • {browse.Item.Subtitle}"),
+                    _ => new SearchResultTile("Unknown", "Result")
+                });
+            }
+        }
+        catch
+        {
+            // Keep the existing demo data for offline fallback when network calls fail.
+        }
     }
 }
 

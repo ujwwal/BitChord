@@ -8,7 +8,7 @@ This is a platform migration only. The frontend must remain visually and structu
 
 ## Current status
 
-The WinUI port is now at the shell-and-structure stage: the app window, tab navigation, title bar, theme tokens, loading states, and the core shared domain models are in place. The remaining work is primarily in wiring the app to the actual Android data flow and replacing the skeleton-only placeholder UI with full product behavior.
+The WinUI port is now at the shell-and-content-model stage: the app window, tab navigation, window chrome, theme tokens, loading states, and a shared data model layer are in place, and the tab views are now bound to richer content models instead of static placeholders. The remaining work is in connecting the actual Android behavior and data flow, especially the audio/media, local-library, and account-backed features that drive the app beyond the shell.
 
 ## Completed
 
@@ -30,7 +30,8 @@ The WinUI port is now at the shell-and-structure stage: the app window, tab navi
 
 ### Porting alignment
 - Android app UI structure used as the source of truth for layout and hierarchy.
-- The UI remains intentionally skeleton-based until data wiring is connected.
+- The WinUI shell now has richer content-state modeling for feed, library, and search screens.
+- The UI remains intentionally faithful to the Android product rather than redesigned into a new experience.
 
 ## In progress / not yet complete
 
