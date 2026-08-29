@@ -1,0 +1,107 @@
+<UserControl
+    x:Class="BitChord.WinUI.Controls.FloatingBottomBar"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <UserControl.Resources>
+        <Style x:Key="TabButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+            <Setter Property="VerticalContentAlignment" Value="Stretch" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="Transparent" CornerRadius="30">
+                            <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                              VerticalAlignment="{TemplateBinding VerticalContentAlignment}" />
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </UserControl.Resources>
+
+    <Border Height="76"
+            Padding="6"
+            Background="{ThemeResource FloatingBarBrush}"
+            BorderBrush="#1AFFFFFF"
+            BorderThickness="0.5"
+            CornerRadius="38">
+        <Grid x:Name="ItemsGrid" SizeChanged="ItemsGrid_SizeChanged">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition />
+                <ColumnDefinition />
+                <ColumnDefinition />
+                <ColumnDefinition />
+            </Grid.ColumnDefinitions>
+
+            <Border x:Name="SelectionIndicator"
+                    Height="64"
+                    HorizontalAlignment="Left"
+                    VerticalAlignment="Center"
+                    Background="{StaticResource AccentWashBrush}"
+                    CornerRadius="32">
+                <Border.RenderTransform>
+                    <TranslateTransform x:Name="SelectionTransform" />
+                </Border.RenderTransform>
+            </Border>
+
+            <Button x:Name="PlayButton" Grid.Column="0" Tag="0" Style="{StaticResource TabButtonStyle}" Click="TabButton_Click">
+                <StackPanel x:Name="PlayContent" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="2" RenderTransformOrigin="0.5,0.5">
+                    <StackPanel.RenderTransform><ScaleTransform x:Name="PlayScale" /></StackPanel.RenderTransform>
+                    <Viewbox Width="25" Height="25">
+                        <Path x:Name="PlayIcon" Data="M6.8,4.8 L19.2,12 L6.8,19.2 Z"
+                              Fill="{Binding Foreground, ElementName=PlayButton}"
+                              Stroke="{Binding Foreground, ElementName=PlayButton}"
+                              StrokeThickness="2.2" StrokeLineJoin="Round" />
+                    </Viewbox>
+                    <TextBlock x:Name="PlayLabel" Text="Play" FontFamily="{StaticResource SemiboldFont}" FontSize="11" />
+                </StackPanel>
+            </Button>
+
+            <Button x:Name="ExploreButton" Grid.Column="1" Tag="1" Style="{StaticResource TabButtonStyle}" Click="TabButton_Click">
+                <StackPanel x:Name="ExploreContent" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="2" RenderTransformOrigin="0.5,0.5">
+                    <StackPanel.RenderTransform><ScaleTransform x:Name="ExploreScale" /></StackPanel.RenderTransform>
+                    <Viewbox Width="25" Height="25">
+                        <Path x:Name="ExploreIcon"
+                              Data="M3.4,12 A8.6,8.6 0 1 1 20.6,12 A8.6,8.6 0 1 1 3.4,12 M15.4,8.6 L13.6,13.6 L8.6,15.4 L10.4,10.4 Z"
+                              Fill="Transparent"
+                              Stroke="{Binding Foreground, ElementName=ExploreButton}"
+                              StrokeThickness="2.2" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round" />
+                    </Viewbox>
+                    <TextBlock x:Name="ExploreLabel" Text="Explore" FontFamily="{StaticResource SemiboldFont}" FontSize="11" />
+                </StackPanel>
+            </Button>
+
+            <Button x:Name="LibraryButton" Grid.Column="2" Tag="2" Style="{StaticResource TabButtonStyle}" Click="TabButton_Click">
+                <StackPanel x:Name="LibraryContent" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="2" RenderTransformOrigin="0.5,0.5">
+                    <StackPanel.RenderTransform><ScaleTransform x:Name="LibraryScale" /></StackPanel.RenderTransform>
+                    <Viewbox Width="25" Height="25">
+                        <Path x:Name="LibraryIcon"
+                              Data="M4.6,4.8 L4.6,19.2 M9.2,4.8 L9.2,19.2 M13.8,4.8 L13.8,19.2 M17.2,5.6 L20.6,18.9"
+                              Fill="Transparent"
+                              Stroke="{Binding Foreground, ElementName=LibraryButton}"
+                              StrokeThickness="2.2" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round" />
+                    </Viewbox>
+                    <TextBlock x:Name="LibraryLabel" Text="Library" FontFamily="{StaticResource SemiboldFont}" FontSize="11" />
+                </StackPanel>
+            </Button>
+
+            <Button x:Name="SearchButton" Grid.Column="3" Tag="3" Style="{StaticResource TabButtonStyle}" Click="TabButton_Click">
+                <StackPanel x:Name="SearchContent" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="2" RenderTransformOrigin="0.5,0.5">
+                    <StackPanel.RenderTransform><ScaleTransform x:Name="SearchScale" /></StackPanel.RenderTransform>
+                    <Viewbox Width="25" Height="25">
+                        <Path x:Name="SearchIcon"
+                              Data="M4.6,11 A6.4,6.4 0 1 1 17.4,11 A6.4,6.4 0 1 1 4.6,11 M15.9,15.9 L20.4,20.4"
+                              Fill="Transparent"
+                              Stroke="{Binding Foreground, ElementName=SearchButton}"
+                              StrokeThickness="2.2" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round" />
+                    </Viewbox>
+                    <TextBlock x:Name="SearchLabel" Text="Search" FontFamily="{StaticResource SemiboldFont}" FontSize="11" />
+                </StackPanel>
+            </Button>
+        </Grid>
+    </Border>
+</UserControl>

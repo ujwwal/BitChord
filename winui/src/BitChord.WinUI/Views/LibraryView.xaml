@@ -1,0 +1,87 @@
+<UserControl
+    x:Class="BitChord.WinUI.Views.LibraryView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+        <StackPanel Padding="0,8,0,26">
+            <TextBlock Margin="10,0,10,14" Text="Library" Style="{StaticResource DisplayTitleStyle}" />
+
+            <Border Margin="10,6,10,18" CornerRadius="18">
+                <Grid>
+                    <Grid.Background>
+                        <LinearGradientBrush StartPoint="0,0.3" EndPoint="1,0.8">
+                            <GradientStop Offset="0" Color="#FF3A1C71" />
+                            <GradientStop Offset="0.38" Color="#FFD76D77" />
+                            <GradientStop Offset="0.7" Color="#FF2B5876" />
+                            <GradientStop Offset="1" Color="#FFFFAF7B" />
+                        </LinearGradientBrush>
+                    </Grid.Background>
+                    <Border>
+                        <Border.Background>
+                            <LinearGradientBrush StartPoint="0,0.5" EndPoint="1,0.5">
+                                <GradientStop Offset="0" Color="#57000000" />
+                                <GradientStop Offset="0.55" Color="#1F000000" />
+                                <GradientStop Offset="1" Color="#00000000" />
+                            </LinearGradientBrush>
+                        </Border.Background>
+                    </Border>
+                    <Grid Padding="18" ColumnSpacing="12">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel VerticalAlignment="Center">
+                            <TextBlock Text="Your Replay"
+                                       FontFamily="{StaticResource BoldFont}"
+                                       FontSize="20"
+                                       Foreground="White" />
+                            <TextBlock MaxLines="2"
+                                       FontFamily="{StaticResource RegularFont}"
+                                       FontSize="14"
+                                       Foreground="#D1FFFFFF"
+                                       Text="Top songs, artists, albums and genres — counted on this device"
+                                       TextTrimming="CharacterEllipsis"
+                                       TextWrapping="Wrap" />
+                        </StackPanel>
+                        <FontIcon Grid.Column="1"
+                                  Glyph="&#xE76C;"
+                                  FontSize="16"
+                                  Foreground="#D9FFFFFF" />
+                    </Grid>
+                </Grid>
+            </Border>
+
+            <TextBlock Margin="10,0,10,10" Text="On Device" Style="{StaticResource SectionTitleStyle}" />
+            <ScrollViewer HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Disabled">
+                <StackPanel Orientation="Horizontal" Spacing="14" Margin="10,0,10,26">
+                    <StackPanel Width="150" Spacing="6">
+                        <Border Height="150" Background="{ThemeResource SurfaceVariantBrush}" CornerRadius="12">
+                            <FontIcon Glyph="&#xE896;" FontSize="34" Foreground="{StaticResource AccentBrush}" />
+                        </Border>
+                        <TextBlock Text="Downloads" Style="{StaticResource TitleStyle}" TextTrimming="CharacterEllipsis" />
+                        <TextBlock Text="Downloaded songs" Style="{StaticResource BodyStyle}" TextTrimming="CharacterEllipsis" />
+                    </StackPanel>
+                    <StackPanel Width="150" Spacing="6">
+                        <Border Height="150" Background="{ThemeResource SurfaceVariantBrush}" CornerRadius="12">
+                            <FontIcon Glyph="&#xE8B7;" FontSize="34" Foreground="{StaticResource AccentBrush}" />
+                        </Border>
+                        <TextBlock Text="Local Music" Style="{StaticResource TitleStyle}" TextTrimming="CharacterEllipsis" />
+                        <TextBlock Text="Audio files on device" Style="{StaticResource BodyStyle}" TextTrimming="CharacterEllipsis" />
+                    </StackPanel>
+                </StackPanel>
+            </ScrollViewer>
+
+            <StackPanel x:Name="SkeletonPanel">
+                <Border Width="172" Height="18" Margin="10,10,10,10" HorizontalAlignment="Left" CornerRadius="9" Style="{StaticResource SkeletonCardStyle}" />
+                <ScrollViewer HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Disabled">
+                    <StackPanel Orientation="Horizontal" Spacing="14" Margin="10,0,10,26">
+                        <Border Width="150" Height="150" CornerRadius="12" Style="{StaticResource SkeletonCardStyle}" />
+                        <Border Width="150" Height="150" CornerRadius="12" Style="{StaticResource SkeletonCardStyle}" />
+                        <Border Width="150" Height="150" CornerRadius="12" Style="{StaticResource SkeletonCardStyle}" />
+                    </StackPanel>
+                </ScrollViewer>
+            </StackPanel>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

@@ -13,6 +13,13 @@ local.properties
 # Kotlin
 .kotlin/
 
+# .NET / Visual Studio
+**/bin/
+**/obj/
+.vs/
+*.user
+*.suo
+
 # Android Studio / IntelliJ
 .idea/
 *.iml

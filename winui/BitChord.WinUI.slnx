@@ -1,5 +1,6 @@
 <Solution>
   <Folder Name="/src/">
     <Project Path="src/BitChord.Core/BitChord.Core.csproj" />
+    <Project Path="src/BitChord.WinUI/BitChord.WinUI.csproj" />
   </Folder>
 </Solution>
