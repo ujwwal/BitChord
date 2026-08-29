@@ -1,8 +1,11 @@
 {
   "version": 2,
-  "dgSpecHash": "JWWuAtfs8F4=",
+  "dgSpecHash": "L3zxAd5RFTI=",
   "success": true,
   "projectFilePath": "/home/runner/work/BitChord/BitChord/winui/src/BitChord.Core/BitChord.Core.csproj",
-  "expectedPackageFiles": [],
+  "expectedPackageFiles": [
+    "/tmp/codeql-scratch-b4cb2720a92004f4/dbs/csharp/working/packages/microsoft.netcore.app.ref/8.0.30/microsoft.netcore.app.ref.8.0.30.nupkg.sha512",
+    "/tmp/codeql-scratch-b4cb2720a92004f4/dbs/csharp/working/packages/microsoft.aspnetcore.app.ref/8.0.30/microsoft.aspnetcore.app.ref.8.0.30.nupkg.sha512"
+  ],
   "logs": []
 }
