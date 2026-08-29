@@ -14,11 +14,7 @@
             <Color x:Key="TopFadeStrongColor">#F0FFFFFF</Color>
             <Color x:Key="TopFadeMiddleColor">#A6FFFFFF</Color>
             <Color x:Key="BottomFadeStrongColor">#E6FFFFFF</Color>
-            <AcrylicBrush x:Key="FloatingBarBrush"
-                          BackgroundSource="Backdrop"
-                          TintColor="#FFF7F7F9"
-                          TintOpacity="0.82"
-                          FallbackColor="#F2F7F7F9" />
+            <SolidColorBrush x:Key="FloatingBarBrush" Color="#D9F7F7F9" />
         </ResourceDictionary>
         <ResourceDictionary x:Key="Dark">
             <SolidColorBrush x:Key="AppBackgroundBrush" Color="#FF000000" />
@@ -31,11 +27,7 @@
             <Color x:Key="TopFadeStrongColor">#F0000000</Color>
             <Color x:Key="TopFadeMiddleColor">#A6000000</Color>
             <Color x:Key="BottomFadeStrongColor">#E6000000</Color>
-            <AcrylicBrush x:Key="FloatingBarBrush"
-                          BackgroundSource="Backdrop"
-                          TintColor="#FF0D0D0F"
-                          TintOpacity="0.82"
-                          FallbackColor="#F20D0D0F" />
+            <SolidColorBrush x:Key="FloatingBarBrush" Color="#D90D0D0F" />
         </ResourceDictionary>
     </ResourceDictionary.ThemeDictionaries>
 

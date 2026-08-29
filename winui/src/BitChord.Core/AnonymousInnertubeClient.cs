@@ -206,7 +206,10 @@ public sealed partial class AnonymousInnertubeClient
         await EnsureBootstrapAsync(cancellationToken).ConfigureAwait(false);
         UpdateWebContext(body);
 
-        StringBuilder url = new(MusicApiBase).Append(endpoint).Append("?prettyPrint=false");
+        StringBuilder url = new(MusicApiBase);
+        url.Append(endpoint)
+           .Append("?prettyPrint=false");
+
         if (query is not null)
         {
             foreach ((string key, string value) in query)

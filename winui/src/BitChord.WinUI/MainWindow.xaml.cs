@@ -8,14 +8,20 @@ namespace BitChord.WinUI;
 
 public sealed partial class MainWindow : Window
 {
-    private readonly FeedView _homeView = new("Listen Now");
-    private readonly FeedView _exploreView = new("Explore");
-    private readonly LibraryView _libraryView = new();
-    private readonly SearchView _searchView = new();
+    private readonly AppShellViewModel _viewModel = new();
+    private readonly FeedView _homeView;
+    private readonly FeedView _exploreView;
+    private readonly LibraryView _libraryView;
+    private readonly SearchView _searchView;
     private int _selectedIndex = -1;
 
     public MainWindow()
     {
+        _homeView = new FeedView("Listen Now", _viewModel.HomeSections);
+        _exploreView = new FeedView("Explore", _viewModel.ExploreSections);
+        _libraryView = new LibraryView(_viewModel.LibraryTiles);
+        _searchView = new SearchView(_viewModel.SearchResults, _viewModel.SearchFilters, _viewModel.SelectedSearchFilter);
+
         InitializeComponent();
 
         ExtendsContentIntoTitleBar = true;
