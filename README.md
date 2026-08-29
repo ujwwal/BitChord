@@ -24,6 +24,9 @@
 > [!WARNING]
 > BitChord is not affiliated with, endorsed by, or connected to YouTube or Google in any way. Use it at your own discretion.
 
+> [!NOTE]
+> WinUI 3 migration bootstrap has started in `/home/runner/work/BitChord/BitChord/winui` with the first C# shared domain models in `BitChord.Core`.
+
 ---
 
 <div align="center">
