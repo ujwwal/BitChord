@@ -6,9 +6,11 @@
     Title="BitChord">
 
     <Grid x:Name="RootGrid" Background="{ThemeResource AppBackgroundBrush}">
-        <ContentControl x:Name="ContentHost" Margin="0,64,0,94" />
+        <!-- Main content area -->
+        <ContentControl x:Name="ContentHost" Margin="0,48,0,0" />
 
-        <Border Height="150"
+        <!-- Bottom fade scrim (strictly non-hit-testable visual overlay) -->
+        <Border Height="140"
                 VerticalAlignment="Bottom"
                 IsHitTestVisible="False">
             <Border.Background>
@@ -19,7 +21,8 @@
             </Border.Background>
         </Border>
 
-        <Border Height="92"
+        <!-- Top fade scrim -->
+        <Border Height="72"
                 VerticalAlignment="Top"
                 IsHitTestVisible="False">
             <Border.Background>
@@ -31,15 +34,16 @@
             </Border.Background>
         </Border>
 
-        <Grid x:Name="AppTitleBar" Height="52" VerticalAlignment="Top">
-            <Viewbox Width="28" Height="18" Margin="16,0,0,0" HorizontalAlignment="Left">
+        <!-- Title bar -->
+        <Grid x:Name="AppTitleBar" Height="48" VerticalAlignment="Top">
+            <Viewbox Width="26" Height="17" Margin="16,0,0,0" HorizontalAlignment="Left">
                 <Path Fill="{ThemeResource PrimaryTextBrush}"
                       Data="M6.73729,316.937 C20.201,294.159 49.6986,286.649 72.4033,300.174 L72.4277,300.174 C237.603,398.282 510.121,407.302 667.823,359.439 C693.147,351.759 719.927,366.055 727.602,391.378 C735.276,416.715 720.992,443.477 695.649,451.176 C514.618,506.132 213.674,495.514 23.5058,382.622 C0.678772,369.103 -6.78757,339.685 6.73729,316.937 M77.8135,154.865 C89.38,136.046 113.982,130.11 132.77,141.676 C270.528,226.369 480.519,250.891 643.46,201.43 C664.592,195.047 686.911,206.957 693.324,228.052 C699.689,249.184 687.774,271.46 666.679,277.886 C480.555,334.36 249.169,307.004 90.9707,209.79 C72.1827,198.224 66.247,173.628 77.8135,154.865 M140.542,15.3012 C149.722,0.246392 169.428,-4.52761 184.482,4.71335 C304.811,78.2128 456.29,94.8593 634.684,54.101 C651.874,50.1843 669.01,60.9551 672.927,78.1518 C676.862,95.3486 666.134,112.484 648.9,116.401 C453.677,161.021 286.219,141.799 151.129,59.2417 C136.074,50.0006 131.301,30.3561 140.542,15.3012 Z"
                       Stretch="Uniform" />
             </Viewbox>
 
             <TextBlock x:Name="PageTitle"
-                       Margin="96,0"
+                       Margin="80,0"
                        HorizontalAlignment="Stretch"
                        VerticalAlignment="Center"
                        TextAlignment="Center"
@@ -47,25 +51,34 @@
                        Style="{StaticResource TitleStyle}"
                        Opacity="0" />
 
-            <Button Width="40"
-                    Height="40"
-                    Margin="0,0,140,0"
-                    Padding="4"
+            <Button Width="36"
+                    Height="36"
+                    Margin="0,0,136,0"
+                    Padding="2"
                     HorizontalAlignment="Right"
                     VerticalAlignment="Center"
                     Background="Transparent"
                     BorderThickness="0"
-                    CornerRadius="20"
+                    CornerRadius="18"
                     ToolTipService.ToolTip="Account and settings">
-                <Border Width="32" Height="32" Background="{ThemeResource SurfaceVariantBrush}" CornerRadius="16">
-                    <FontIcon Glyph="&#xE77B;" FontSize="17" Foreground="{ThemeResource PrimaryTextBrush}" />
+                <Border Width="30" Height="30" Background="{ThemeResource SurfaceVariantBrush}" CornerRadius="15">
+                    <FontIcon Glyph="&#xE77B;" FontSize="15" Foreground="{ThemeResource PrimaryTextBrush}" />
                 </Border>
             </Button>
         </Grid>
 
+        <!-- Mini-player bar -->
+        <controls:MiniPlayerBar x:Name="MiniPlayer"
+                                VerticalAlignment="Bottom"
+                                HorizontalAlignment="Stretch"
+                                MaxWidth="420"
+                                Margin="16,0,16,92"
+                                Visibility="Collapsed" />
+
+        <!-- Floating bottom navigation pill -->
         <controls:FloatingBottomBar x:Name="BottomBar"
-                                    Margin="10,0,10,2"
-                                    MaxWidth="440"
+                                    Margin="16,0,16,18"
+                                    MaxWidth="420"
                                     HorizontalAlignment="Stretch"
                                     VerticalAlignment="Bottom" />
     </Grid>

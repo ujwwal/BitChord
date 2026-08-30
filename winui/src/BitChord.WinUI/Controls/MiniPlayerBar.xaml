@@ -1,0 +1,95 @@
+<UserControl
+    x:Class="BitChord.WinUI.Controls.MiniPlayerBar"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <Border x:Name="PillBorder"
+            Margin="16,0,16,0"
+            Padding="10,6"
+            Background="{ThemeResource FloatingBarBrush}"
+            BorderBrush="#1AFFFFFF"
+            BorderThickness="0.5"
+            CornerRadius="30"
+            Tapped="PillBorder_Tapped"
+            IsHitTestVisible="True">
+
+        <Grid ColumnSpacing="10">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+
+            <!-- Artwork -->
+            <Grid Grid.Column="0" Width="38" Height="38">
+                <Border Background="{ThemeResource SurfaceVariantBrush}" CornerRadius="8" />
+                <Image x:Name="ArtworkImage"
+                       Width="38" Height="38"
+                       Stretch="UniformToFill">
+                    <Image.Clip>
+                        <RectangleGeometry Rect="0,0,38,38" />
+                    </Image.Clip>
+                </Image>
+                <FontIcon x:Name="ArtworkPlaceholder"
+                          Glyph="&#xE87C;"
+                          FontSize="18"
+                          FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                          Foreground="{StaticResource AccentBrush}"
+                          HorizontalAlignment="Center"
+                          VerticalAlignment="Center" />
+            </Grid>
+
+            <!-- Title + Artist -->
+            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                <TextBlock x:Name="TitleText"
+                           Style="{StaticResource TitleStyle}"
+                           FontSize="14"
+                           TextTrimming="CharacterEllipsis"
+                           MaxLines="1" />
+                <TextBlock x:Name="ArtistText"
+                           Style="{StaticResource BodyStyle}"
+                           FontSize="12"
+                           TextTrimming="CharacterEllipsis"
+                           MaxLines="1" />
+            </StackPanel>
+
+            <!-- Play / Pause (or loading spinner) -->
+            <Grid Grid.Column="2" Width="36" Height="36">
+                <ProgressRing x:Name="LoadingRing"
+                              Width="20" Height="20"
+                              IsActive="False"
+                              Visibility="Collapsed"
+                              Foreground="{ThemeResource PrimaryTextBrush}" />
+
+                <Button x:Name="PlayPauseButton"
+                        Width="36" Height="36"
+                        Padding="2"
+                        Background="Transparent"
+                        BorderThickness="0"
+                        Click="PlayPauseButton_Click"
+                        ToolTipService.ToolTip="Play / Pause">
+                    <FontIcon x:Name="PlayPauseIcon"
+                              Glyph="&#xE768;"
+                              FontSize="18"
+                              FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                              Foreground="{ThemeResource PrimaryTextBrush}" />
+                </Button>
+            </Grid>
+
+            <!-- Skip Next -->
+            <Button Grid.Column="3"
+                    Width="36" Height="36"
+                    Padding="2"
+                    Background="Transparent"
+                    BorderThickness="0"
+                    Click="NextButton_Click"
+                    ToolTipService.ToolTip="Next">
+                <FontIcon Glyph="&#xE893;"
+                          FontSize="18"
+                          FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                          Foreground="{ThemeResource PrimaryTextBrush}" />
+            </Button>
+        </Grid>
+    </Border>
+</UserControl>

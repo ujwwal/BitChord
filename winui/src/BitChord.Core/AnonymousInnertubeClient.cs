@@ -511,6 +511,38 @@ public sealed record InnertubePlayerClient(
     int? AndroidSdkVersion = null,
     string? Origin = null)
 {
+    public static readonly InnertubePlayerClient AndroidMusic = new(
+        ClientName: "ANDROID_MUSIC",
+        ClientVersion: "8.39.42",
+        ClientId: "21",
+        UserAgent: "com.google.android.apps.youtube.music/8.39.42 (Linux; U; Android 15; en_US; Pixel 9 Pro; Build/AP4A.250205.002) gzip",
+        OsName: "Android",
+        OsVersion: "15",
+        DeviceMake: "Google",
+        DeviceModel: "Pixel 9 Pro",
+        AndroidSdkVersion: 35
+    );
+
+    public static readonly InnertubePlayerClient AndroidVr = new(
+        ClientName: "ANDROID_VR",
+        ClientVersion: "1.65.10",
+        ClientId: "28",
+        UserAgent: "com.google.android.apps.youtube.vr.oculus/1.65.10 (Linux; U; Android 12L; eureka-user Build/SQ3A.220605.009.A1) gzip",
+        OsName: "Android",
+        OsVersion: "12L",
+        DeviceMake: "Oculus",
+        DeviceModel: "Quest 3",
+        AndroidSdkVersion: 32
+    );
+
+    public static readonly InnertubePlayerClient TvHtml5 = new(
+        ClientName: "TVHTML5",
+        ClientVersion: "7.20260707.12.00",
+        ClientId: "85",
+        UserAgent: "Mozilla/5.0 (ChromiumStylePlatform; Linux x86_64; Cobalt/24.lts.5.1034175-gold) Cobalt/24.lts.5.1034175-gold (unlike Gecko) Starboard/16, Unknown_Device_Platform_name/Unknown_Device_Model_name (Unknown, Unknown_Device_Brand_name)",
+        Origin: "https://www.youtube.com"
+    );
+
     public bool UsesMusicHost => string.Equals(
         Origin,
         "https://music.youtube.com",

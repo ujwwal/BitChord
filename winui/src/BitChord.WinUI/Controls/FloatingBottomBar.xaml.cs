@@ -3,7 +3,6 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Animation;
-using Microsoft.UI.Xaml.Shapes;
 
 namespace BitChord.WinUI.Controls;
 
@@ -50,15 +49,23 @@ public sealed partial class FloatingBottomBar : UserControl
         var buttons = new[] { PlayButton, ExploreButton, LibraryButton, SearchButton };
         for (var index = 0; index < buttons.Length; index++)
         {
-            buttons[index].Foreground = index == _selectedIndex ? selected : unselected;
+            if (buttons[index] is not null)
+            {
+                buttons[index].Foreground = index == _selectedIndex ? selected : unselected;
+            }
         }
     }
 
     private void TabButton_Click(object sender, RoutedEventArgs e)
     {
-        if (sender is FrameworkElement { Tag: string value } && int.TryParse(value, out var index))
+        if (sender is FrameworkElement fe && fe.Tag is not null)
         {
-            TabSelected?.Invoke(index);
+            string tagStr = fe.Tag.ToString() ?? "";
+            if (int.TryParse(tagStr, out var index))
+            {
+                SetSelectedIndex(index);
+                TabSelected?.Invoke(index);
+            }
         }
     }
 
@@ -87,11 +94,10 @@ public sealed partial class FloatingBottomBar : UserControl
         var animation = new DoubleAnimation
         {
             To = target,
-            Duration = new Duration(TimeSpan.FromMilliseconds(320)),
+            Duration = new Duration(TimeSpan.FromMilliseconds(260)),
             EnableDependentAnimation = true,
-            EasingFunction = new BackEase
+            EasingFunction = new CubicEase
             {
-                Amplitude = 0.18,
                 EasingMode = EasingMode.EaseOut,
             },
         };
@@ -106,7 +112,9 @@ public sealed partial class FloatingBottomBar : UserControl
         var scales = new[] { PlayScale, ExploreScale, LibraryScale, SearchScale };
         for (var index = 0; index < scales.Length; index++)
         {
-            var target = index == _selectedIndex ? 1.08 : 1.0;
+            if (scales[index] is null) continue;
+
+            var target = index == _selectedIndex ? 1.06 : 1.0;
             if (!animate)
             {
                 scales[index].ScaleX = target;
@@ -125,11 +133,10 @@ public sealed partial class FloatingBottomBar : UserControl
         var animation = new DoubleAnimation
         {
             To = target,
-            Duration = new Duration(TimeSpan.FromMilliseconds(220)),
+            Duration = new Duration(TimeSpan.FromMilliseconds(200)),
             EnableDependentAnimation = true,
-            EasingFunction = new BackEase
+            EasingFunction = new CubicEase
             {
-                Amplitude = 0.12,
                 EasingMode = EasingMode.EaseOut,
             },
         };

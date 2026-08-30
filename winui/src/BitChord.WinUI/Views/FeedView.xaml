@@ -4,47 +4,112 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:vm="using:BitChord.WinUI">
 
+    <UserControl.Resources>
+        <!-- ── Hero card (first section — landscape 16:10) ────────────────────── -->
+        <DataTemplate x:Key="HeroCardTemplate" x:DataType="vm:FeedCard">
+            <Grid Width="290" Height="181" Margin="0,0,14,0"
+                  Tapped="Card_Tapped"
+                  IsHitTestVisible="True"
+                  CornerRadius="18">
+                <!-- Background surface -->
+                <Border Background="{ThemeResource SurfaceVariantBrush}" CornerRadius="18" />
+
+                <!-- Placeholder icon (Segoe Fluent Icons / MDL2) -->
+                <FontIcon Glyph="&#xE87C;"
+                          FontSize="36"
+                          Foreground="{StaticResource AccentBrush}"
+                          HorizontalAlignment="Center"
+                          VerticalAlignment="Center"
+                          Visibility="{x:Bind PlaceholderVisibility, Mode=OneTime}" />
+
+                <!-- Bottom scrim + caption -->
+                <Grid VerticalAlignment="Bottom" CornerRadius="0,0,18,18" IsHitTestVisible="False">
+                    <Grid.Background>
+                        <LinearGradientBrush StartPoint="0.5,0" EndPoint="0.5,1">
+                            <GradientStop Offset="0" Color="#00000000" />
+                            <GradientStop Offset="1" Color="#CC000000" />
+                        </LinearGradientBrush>
+                    </Grid.Background>
+                    <StackPanel Padding="14,24,14,14">
+                        <TextBlock Text="{x:Bind Title}"
+                                   FontFamily="{StaticResource SemiboldFont}"
+                                   FontSize="15"
+                                   CharacterSpacing="-10"
+                                   Foreground="White"
+                                   TextTrimming="CharacterEllipsis"
+                                   MaxLines="1" />
+                        <TextBlock Text="{x:Bind Subtitle}"
+                                   FontFamily="{StaticResource RegularFont}"
+                                   FontSize="13"
+                                   Foreground="#B3FFFFFF"
+                                   TextTrimming="CharacterEllipsis"
+                                   MaxLines="1" />
+                    </StackPanel>
+                </Grid>
+            </Grid>
+        </DataTemplate>
+
+        <!-- ── Compact card (all subsequent sections — square) ───────────────── -->
+        <DataTemplate x:Key="CompactCardTemplate" x:DataType="vm:FeedCard">
+            <StackPanel Width="144" Spacing="6" Margin="0,0,14,0"
+                        Tapped="Card_Tapped"
+                        IsHitTestVisible="True">
+                <Grid Height="144" CornerRadius="12">
+                    <Border Background="{ThemeResource SurfaceVariantBrush}" CornerRadius="12" />
+                    <FontIcon Glyph="&#xE87C;"
+                              FontSize="28"
+                              Foreground="{StaticResource AccentBrush}"
+                              HorizontalAlignment="Center"
+                              VerticalAlignment="Center"
+                              Visibility="{x:Bind PlaceholderVisibility, Mode=OneTime}" />
+                </Grid>
+                <TextBlock Text="{x:Bind Title}"
+                           Style="{StaticResource TitleStyle}"
+                           FontSize="14"
+                           TextTrimming="CharacterEllipsis"
+                           MaxLines="1" />
+                <TextBlock Text="{x:Bind Subtitle}"
+                           Style="{StaticResource BodyStyle}"
+                           FontSize="12"
+                           TextTrimming="CharacterEllipsis"
+                           MaxLines="1" />
+            </StackPanel>
+        </DataTemplate>
+    </UserControl.Resources>
+
     <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-        <StackPanel Padding="0,8,0,26">
-            <TextBlock x:Name="Heading" Margin="10,0,10,18" Style="{StaticResource DisplayTitleStyle}" />
+        <StackPanel Padding="16,8,16,100">
+            <TextBlock x:Name="Heading" Margin="0,0,0,18" Style="{StaticResource DisplayTitleStyle}" />
 
             <ItemsControl x:Name="SectionsHost">
                 <ItemsControl.ItemTemplate>
                     <DataTemplate x:DataType="vm:FeedSection">
-                        <StackPanel Margin="0,0,0,18">
-                            <TextBlock Margin="10,0,10,10"
+                        <StackPanel Margin="0,0,0,24">
+                            <TextBlock Margin="0,0,0,12"
                                        Text="{x:Bind Title}"
                                        Style="{StaticResource SectionTitleStyle}" />
 
-                            <ScrollViewer HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Disabled">
-                                <ItemsRepeater ItemsSource="{x:Bind Cards}">
+                            <!-- Hero row (first shelf, landscape cards) -->
+                            <ScrollViewer HorizontalScrollBarVisibility="Hidden"
+                                          VerticalScrollBarVisibility="Disabled"
+                                          Visibility="{x:Bind HeroVisibility, Mode=OneTime}">
+                                <ItemsRepeater ItemsSource="{x:Bind Cards}"
+                                               ItemTemplate="{StaticResource HeroCardTemplate}">
                                     <ItemsRepeater.Layout>
                                         <StackLayout Orientation="Horizontal" />
                                     </ItemsRepeater.Layout>
-                                    <ItemsRepeater.ItemTemplate>
-                                        <DataTemplate x:DataType="vm:FeedCard">
-                                            <StackPanel Width="150" Spacing="8" Margin="0,0,14,0">
-                                                <Border Height="150"
-                                                        Background="{ThemeResource SurfaceVariantBrush}"
-                                                        CornerRadius="12">
-                                                    <Grid>
-                                                        <Border Background="{ThemeResource SurfaceVariantBrush}" CornerRadius="12" />
-                                                        <FontIcon Glyph="&#xE87C;"
-                                                                  FontSize="30"
-                                                                  Foreground="{StaticResource AccentBrush}"
-                                                                  HorizontalAlignment="Center"
-                                                                  VerticalAlignment="Center" />
-                                                    </Grid>
-                                                </Border>
-                                                <TextBlock Text="{x:Bind Title}"
-                                                           Style="{StaticResource TitleStyle}"
-                                                           TextTrimming="CharacterEllipsis" />
-                                                <TextBlock Text="{x:Bind Subtitle}"
-                                                           Style="{StaticResource BodyStyle}"
-                                                           TextTrimming="CharacterEllipsis" />
-                                            </StackPanel>
-                                        </DataTemplate>
-                                    </ItemsRepeater.ItemTemplate>
+                                </ItemsRepeater>
+                            </ScrollViewer>
+
+                            <!-- Compact row (all other shelves, square cards) -->
+                            <ScrollViewer HorizontalScrollBarVisibility="Hidden"
+                                          VerticalScrollBarVisibility="Disabled"
+                                          Visibility="{x:Bind CompactVisibility, Mode=OneTime}">
+                                <ItemsRepeater ItemsSource="{x:Bind Cards}"
+                                               ItemTemplate="{StaticResource CompactCardTemplate}">
+                                    <ItemsRepeater.Layout>
+                                        <StackLayout Orientation="Horizontal" />
+                                    </ItemsRepeater.Layout>
                                 </ItemsRepeater>
                             </ScrollViewer>
                         </StackPanel>

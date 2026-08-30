@@ -40,9 +40,10 @@
     <FontFamily x:Key="BoldFont">ms-appx:///Assets/Fonts/sf_pro_display_bold.otf#SF Pro Display</FontFamily>
     <FontFamily x:Key="HeavyFont">ms-appx:///Assets/Fonts/sf_pro_display_heavy.otf#SF Pro Display</FontFamily>
 
-    <Style TargetType="TextBlock">
-        <Setter Property="FontFamily" Value="{StaticResource RegularFont}" />
-        <Setter Property="Foreground" Value="{ThemeResource PrimaryTextBrush}" />
+    <!-- CRITICAL: Force FontIcon to always use Segoe icon fonts so custom text fonts don't corrupt glyphs -->
+    <Style TargetType="FontIcon">
+        <Setter Property="FontFamily" Value="Segoe Fluent Icons, Segoe MDL2 Assets" />
+        <Setter Property="IsHitTestVisible" Value="False" />
     </Style>
 
     <Style x:Key="DisplayTitleStyle" TargetType="TextBlock">

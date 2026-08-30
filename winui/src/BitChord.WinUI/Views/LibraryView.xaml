@@ -5,10 +5,11 @@
     xmlns:vm="using:BitChord.WinUI">
 
     <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-        <StackPanel Padding="0,8,0,26">
-            <TextBlock Margin="10,0,10,14" Text="Library" Style="{StaticResource DisplayTitleStyle}" />
+        <StackPanel Padding="16,8,16,100">
+            <TextBlock Margin="0,0,0,16" Text="Library" Style="{StaticResource DisplayTitleStyle}" />
 
-            <Border Margin="10,6,10,18" CornerRadius="18">
+            <!-- Your Replay Banner -->
+            <Border Margin="0,4,0,24" CornerRadius="18" Tapped="Replay_Tapped" IsHitTestVisible="True">
                 <Grid>
                     <Grid.Background>
                         <LinearGradientBrush StartPoint="0,0.3" EndPoint="1,0.8">
@@ -39,7 +40,7 @@
                                        Foreground="White" />
                             <TextBlock MaxLines="2"
                                        FontFamily="{StaticResource RegularFont}"
-                                       FontSize="14"
+                                       FontSize="13"
                                        Foreground="#D1FFFFFF"
                                        Text="Top songs, artists, albums and genres — counted on this device"
                                        TextTrimming="CharacterEllipsis"
@@ -53,20 +54,22 @@
                 </Grid>
             </Border>
 
-            <TextBlock Margin="10,0,10,10" Text="On Device" Style="{StaticResource SectionTitleStyle}" />
+            <TextBlock Margin="0,0,0,12" Text="On Device" Style="{StaticResource SectionTitleStyle}" />
             <ScrollViewer HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Disabled">
-                <ItemsRepeater x:Name="TilesHost" Margin="10,0,10,26">
+                <ItemsRepeater x:Name="TilesHost" Margin="0,0,0,24">
                     <ItemsRepeater.Layout>
                         <StackLayout Orientation="Horizontal" />
                     </ItemsRepeater.Layout>
                     <ItemsRepeater.ItemTemplate>
                         <DataTemplate x:DataType="vm:LibraryTile">
-                            <StackPanel Width="150" Spacing="6" Margin="0,0,14,0">
-                                <Border Height="150" Background="{ThemeResource SurfaceVariantBrush}" CornerRadius="12">
-                                    <FontIcon Glyph="{x:Bind IconGlyph}" FontSize="34" Foreground="{StaticResource AccentBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                            <StackPanel Width="144" Spacing="6" Margin="0,0,14,0"
+                                        Tapped="Tile_Tapped"
+                                        IsHitTestVisible="True">
+                                <Border Height="144" Background="{ThemeResource SurfaceVariantBrush}" CornerRadius="14">
+                                    <FontIcon Glyph="{x:Bind IconGlyph}" FontSize="36" Foreground="{StaticResource AccentBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" />
                                 </Border>
-                                <TextBlock Text="{x:Bind Title}" Style="{StaticResource TitleStyle}" TextTrimming="CharacterEllipsis" />
-                                <TextBlock Text="{x:Bind Subtitle}" Style="{StaticResource BodyStyle}" TextTrimming="CharacterEllipsis" />
+                                <TextBlock Text="{x:Bind Title}" Style="{StaticResource TitleStyle}" FontSize="14" TextTrimming="CharacterEllipsis" />
+                                <TextBlock Text="{x:Bind Subtitle}" Style="{StaticResource BodyStyle}" FontSize="12" TextTrimming="CharacterEllipsis" />
                             </StackPanel>
                         </DataTemplate>
                     </ItemsRepeater.ItemTemplate>

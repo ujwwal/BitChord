@@ -8,12 +8,14 @@
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="BorderThickness" Value="0" />
             <Setter Property="Padding" Value="0" />
+            <Setter Property="HorizontalAlignment" Value="Stretch" />
+            <Setter Property="VerticalAlignment" Value="Stretch" />
             <Setter Property="HorizontalContentAlignment" Value="Stretch" />
             <Setter Property="VerticalContentAlignment" Value="Stretch" />
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border Background="Transparent" CornerRadius="30">
+                        <Border Background="Transparent" CornerRadius="28">
                             <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
                                               VerticalAlignment="{TemplateBinding VerticalContentAlignment}" />
                         </Border>
@@ -23,35 +25,40 @@
         </Style>
     </UserControl.Resources>
 
-    <Border Height="76"
-            Padding="6"
+    <Border Height="68"
+            Padding="4"
             Background="{ThemeResource FloatingBarBrush}"
             BorderBrush="#1AFFFFFF"
             BorderThickness="0.5"
-            CornerRadius="38">
+            CornerRadius="34">
         <Grid x:Name="ItemsGrid" SizeChanged="ItemsGrid_SizeChanged">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition />
-                <ColumnDefinition />
-                <ColumnDefinition />
-                <ColumnDefinition />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
 
+            <!-- Selection pill indicator (behind buttons, non-hit-testable) -->
             <Border x:Name="SelectionIndicator"
-                    Height="64"
+                    Grid.Column="0"
+                    Grid.ColumnSpan="4"
+                    Height="58"
                     HorizontalAlignment="Left"
                     VerticalAlignment="Center"
                     Background="{StaticResource AccentWashBrush}"
-                    CornerRadius="32">
+                    CornerRadius="29"
+                    IsHitTestVisible="False">
                 <Border.RenderTransform>
                     <TranslateTransform x:Name="SelectionTransform" />
                 </Border.RenderTransform>
             </Border>
 
+            <!-- Tab 0: Play / Listen Now -->
             <Button x:Name="PlayButton" Grid.Column="0" Tag="0" Style="{StaticResource TabButtonStyle}" Click="TabButton_Click">
                 <StackPanel x:Name="PlayContent" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="2" RenderTransformOrigin="0.5,0.5">
                     <StackPanel.RenderTransform><ScaleTransform x:Name="PlayScale" /></StackPanel.RenderTransform>
-                    <Viewbox Width="25" Height="25">
+                    <Viewbox Width="22" Height="22">
                         <Path x:Name="PlayIcon" Data="M6.8,4.8 L19.2,12 L6.8,19.2 Z"
                               Fill="{Binding Foreground, ElementName=PlayButton}"
                               Stroke="{Binding Foreground, ElementName=PlayButton}"
@@ -61,10 +68,11 @@
                 </StackPanel>
             </Button>
 
+            <!-- Tab 1: Explore -->
             <Button x:Name="ExploreButton" Grid.Column="1" Tag="1" Style="{StaticResource TabButtonStyle}" Click="TabButton_Click">
                 <StackPanel x:Name="ExploreContent" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="2" RenderTransformOrigin="0.5,0.5">
                     <StackPanel.RenderTransform><ScaleTransform x:Name="ExploreScale" /></StackPanel.RenderTransform>
-                    <Viewbox Width="25" Height="25">
+                    <Viewbox Width="22" Height="22">
                         <Path x:Name="ExploreIcon"
                               Data="M3.4,12 A8.6,8.6 0 1 1 20.6,12 A8.6,8.6 0 1 1 3.4,12 M15.4,8.6 L13.6,13.6 L8.6,15.4 L10.4,10.4 Z"
                               Fill="Transparent"
@@ -75,10 +83,11 @@
                 </StackPanel>
             </Button>
 
+            <!-- Tab 2: Library -->
             <Button x:Name="LibraryButton" Grid.Column="2" Tag="2" Style="{StaticResource TabButtonStyle}" Click="TabButton_Click">
                 <StackPanel x:Name="LibraryContent" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="2" RenderTransformOrigin="0.5,0.5">
                     <StackPanel.RenderTransform><ScaleTransform x:Name="LibraryScale" /></StackPanel.RenderTransform>
-                    <Viewbox Width="25" Height="25">
+                    <Viewbox Width="22" Height="22">
                         <Path x:Name="LibraryIcon"
                               Data="M4.6,4.8 L4.6,19.2 M9.2,4.8 L9.2,19.2 M13.8,4.8 L13.8,19.2 M17.2,5.6 L20.6,18.9"
                               Fill="Transparent"
@@ -89,10 +98,11 @@
                 </StackPanel>
             </Button>
 
+            <!-- Tab 3: Search -->
             <Button x:Name="SearchButton" Grid.Column="3" Tag="3" Style="{StaticResource TabButtonStyle}" Click="TabButton_Click">
                 <StackPanel x:Name="SearchContent" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="2" RenderTransformOrigin="0.5,0.5">
                     <StackPanel.RenderTransform><ScaleTransform x:Name="SearchScale" /></StackPanel.RenderTransform>
-                    <Viewbox Width="25" Height="25">
+                    <Viewbox Width="22" Height="22">
                         <Path x:Name="SearchIcon"
                               Data="M4.6,11 A6.4,6.4 0 1 1 17.4,11 A6.4,6.4 0 1 1 4.6,11 M15.9,15.9 L20.4,20.4"
                               Fill="Transparent"
