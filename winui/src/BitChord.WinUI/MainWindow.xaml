@@ -59,25 +59,41 @@
                        Style="{StaticResource TitleStyle}"
                        Opacity="0" />
 
-            <!-- Account / Settings Button -->
-            <Button x:Name="AccountButton"
-                    Width="36"
-                    Height="36"
-                    Margin="0,0,136,0"
-                    Padding="2"
-                    HorizontalAlignment="Right"
-                    VerticalAlignment="Center"
-                    Background="Transparent"
-                    BorderThickness="0"
-                    CornerRadius="18"
-                    Click="AccountButton_Click"
-                    ToolTipService.ToolTip="Account and Settings">
-                <Border Width="30" Height="30" Background="{ThemeResource SurfaceVariantBrush}" CornerRadius="15">
-                    <FontIcon Glyph="&#xE77B;" FontSize="15"
-                              FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
-                              Foreground="{ThemeResource PrimaryTextBrush}" />
-                </Border>
-            </Button>
+            <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,0,136,0" HorizontalAlignment="Right" VerticalAlignment="Center">
+                <!-- Live Logs / Diagnostics Button -->
+                <Button x:Name="LogsButton"
+                        Width="36"
+                        Height="36"
+                        Padding="2"
+                        Background="Transparent"
+                        BorderThickness="0"
+                        CornerRadius="18"
+                        Click="LogsButton_Click"
+                        ToolTipService.ToolTip="Live Diagnostics &amp; Logs">
+                    <Border Width="30" Height="30" Background="{ThemeResource SurfaceVariantBrush}" CornerRadius="15">
+                        <FontIcon Glyph="&#xE9F9;" FontSize="14"
+                                  FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                  Foreground="{ThemeResource PrimaryTextBrush}" />
+                    </Border>
+                </Button>
+
+                <!-- Account / Settings Button -->
+                <Button x:Name="AccountButton"
+                        Width="36"
+                        Height="36"
+                        Padding="2"
+                        Background="Transparent"
+                        BorderThickness="0"
+                        CornerRadius="18"
+                        Click="AccountButton_Click"
+                        ToolTipService.ToolTip="Account and Settings">
+                    <Border Width="30" Height="30" Background="{ThemeResource SurfaceVariantBrush}" CornerRadius="15">
+                        <FontIcon Glyph="&#xE77B;" FontSize="15"
+                                  FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                  Foreground="{ThemeResource PrimaryTextBrush}" />
+                    </Border>
+                </Button>
+            </StackPanel>
         </Grid>
 
         <!-- Mini-player bar: Centered above floating bottom bar -->

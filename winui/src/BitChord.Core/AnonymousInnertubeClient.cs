@@ -523,6 +523,14 @@ public sealed record InnertubePlayerClient(
         AndroidSdkVersion: 35
     );
 
+    public static readonly InnertubePlayerClient TvHtml5 = new(
+        ClientName: "TVHTML5",
+        ClientVersion: "7.20260707.07.00",
+        ClientId: "7",
+        UserAgent: "Mozilla/5.0(SMART-TV; Linux; Tizen 4.0.0.2) AppleWebkit/605.1.15 (KHTML, like Gecko) SamsungBrowser/9.2 TV Safari/605.1.15",
+        Origin: "https://www.youtube.com"
+    );
+
     public static readonly InnertubePlayerClient AndroidVr = new(
         ClientName: "ANDROID_VR",
         ClientVersion: "1.65.10",
@@ -535,18 +543,61 @@ public sealed record InnertubePlayerClient(
         AndroidSdkVersion: 32
     );
 
-    public static readonly InnertubePlayerClient TvHtml5 = new(
-        ClientName: "TVHTML5",
-        ClientVersion: "7.20260707.12.00",
-        ClientId: "85",
-        UserAgent: "Mozilla/5.0 (ChromiumStylePlatform; Linux x86_64; Cobalt/24.lts.5.1034175-gold) Cobalt/24.lts.5.1034175-gold (unlike Gecko) Starboard/16, Unknown_Device_Platform_name/Unknown_Device_Model_name (Unknown, Unknown_Device_Brand_name)",
-        Origin: "https://www.youtube.com"
+    public static readonly InnertubePlayerClient Ios = new(
+        ClientName: "IOS",
+        ClientVersion: "21.26.4",
+        ClientId: "5",
+        UserAgent: "com.google.ios.youtube/21.26.4 (iPhone16,2; U; CPU iOS 18_3_2 like Mac OS X;)",
+        OsName: "iPhone",
+        OsVersion: "18.3.2.22D82",
+        DeviceMake: "Apple",
+        DeviceModel: "iPhone16,2"
     );
 
-    public bool UsesMusicHost => string.Equals(
-        Origin,
-        "https://music.youtube.com",
-        StringComparison.OrdinalIgnoreCase);
+    public static readonly InnertubePlayerClient IosRecent = new(
+        ClientName: "IOS",
+        ClientVersion: "21.29.1",
+        ClientId: "5",
+        UserAgent: "com.google.ios.youtube/21.29.1 (iPhone16,2; U; CPU iOS 18_5 like Mac OS X;)",
+        OsName: "iPhone",
+        OsVersion: "18.5.22F70",
+        DeviceMake: "Apple",
+        DeviceModel: "iPhone16,2"
+    );
+
+    public static InnertubePlayerClient ForStreamUrl(string url)
+    {
+        if (Uri.TryCreate(url, UriKind.Absolute, out var uri))
+        {
+            var query = System.Web.HttpUtility.ParseQueryString(uri.Query);
+            string? c = query.Get("c")?.ToUpperInvariant();
+            string? cver = query.Get("cver");
+
+            if (c is not null)
+            {
+                if (c.StartsWith("IOS"))
+                {
+                    return cver == IosRecent.ClientVersion ? IosRecent : Ios;
+                }
+                if (c == "ANDROID_VR")
+                {
+                    return AndroidVr;
+                }
+                if (c == "ANDROID_MUSIC")
+                {
+                    return AndroidMusic;
+                }
+                if (c.StartsWith("TVHTML5"))
+                {
+                    return TvHtml5;
+                }
+            }
+        }
+        return Ios;
+    }
+
+    public bool UsesMusicHost => string.Equals(ClientName, "ANDROID_MUSIC", StringComparison.OrdinalIgnoreCase) ||
+                                 string.Equals(Origin, "https://music.youtube.com", StringComparison.OrdinalIgnoreCase);
 
     public IReadOnlyDictionary<string, string> GetMediaHeaders()
     {

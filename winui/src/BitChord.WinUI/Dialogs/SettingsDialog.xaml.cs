@@ -17,6 +17,23 @@ public sealed partial class SettingsDialog : ContentDialog
         AppLogger.Info("Cache cleared by user.");
     }
 
+    private async void ViewLiveLogs_Click(object sender, RoutedEventArgs e)
+    {
+        Hide();
+        try
+        {
+            var logDialog = new LogViewerDialog
+            {
+                XamlRoot = XamlRoot
+            };
+            await logDialog.ShowAsync();
+        }
+        catch (Exception ex)
+        {
+            AppLogger.Error("Failed to open LogViewerDialog from settings", ex);
+        }
+    }
+
     private void OpenLogs_Click(object sender, RoutedEventArgs e)
     {
         try

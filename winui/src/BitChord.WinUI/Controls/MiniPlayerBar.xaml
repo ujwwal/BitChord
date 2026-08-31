@@ -40,16 +40,17 @@
                           VerticalAlignment="Center" />
             </Grid>
 
-            <!-- Title + Artist -->
-            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+            <!-- Title + Live Lyric Snippet / Artist -->
+            <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="1">
                 <TextBlock x:Name="TitleText"
                            Style="{StaticResource TitleStyle}"
-                           FontSize="14"
+                           FontSize="13"
                            TextTrimming="CharacterEllipsis"
                            MaxLines="1" />
-                <TextBlock x:Name="ArtistText"
+                <TextBlock x:Name="ArtistOrLyricText"
                            Style="{StaticResource BodyStyle}"
-                           FontSize="12"
+                           FontSize="11"
+                           Foreground="#B3FFFFFF"
                            TextTrimming="CharacterEllipsis"
                            MaxLines="1" />
             </StackPanel>

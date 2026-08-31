@@ -15,6 +15,7 @@ public sealed partial class MainWindow : Window
     private FeedView? _exploreView;
     private LibraryView? _libraryView;
     private SearchView? _searchView;
+    private DetailView? _detailView;
     private NowPlayingView? _nowPlayingView;
     private int _selectedIndex = -1;
 
@@ -34,7 +35,18 @@ public sealed partial class MainWindow : Window
         {
             NowPlayingHost.Visibility = Visibility.Collapsed;
         };
+        _nowPlayingView.OpenArtistRequested += (artistId, artistName) =>
+        {
+            _ = _viewModel.OpenBrowsePageAsync(artistId, artistName, "Artist", null);
+        };
         NowPlayingHost.Children.Add(_nowPlayingView);
+
+        // ── Detail View Setup ─────────────────────────────────────────────────
+        _detailView = new DetailView(_viewModel);
+        _detailView.BackRequested += () =>
+        {
+            RestoreActiveTabView();
+        };
 
         // ── Tab selection ─────────────────────────────────────────────────────
         BottomBar.TabSelected += SelectTab;
@@ -50,7 +62,6 @@ public sealed partial class MainWindow : Window
         MiniPlayer.NextClicked += (_, _) => _viewModel.PlayNext();
         MiniPlayer.BarClicked += (_, _) =>
         {
-            // Open full-screen Now Playing view
             NowPlayingHost.Visibility = Visibility.Visible;
         };
 
@@ -76,7 +87,31 @@ public sealed partial class MainWindow : Window
             case nameof(AppShellViewModel.IsLoading):
                 MiniPlayer.IsLoading = _viewModel.IsLoading;
                 break;
+
+            case nameof(AppShellViewModel.LyricsSnippet):
+                MiniPlayer.LyricSnippet = _viewModel.LyricsSnippet;
+                break;
+
+            case nameof(AppShellViewModel.IsDetailViewActive):
+                if (_viewModel.IsDetailViewActive)
+                {
+                    ContentHost.Content = _detailView;
+                    PageTitle.Text = _viewModel.CurrentDetailPage?.Title ?? "Details";
+                    PageTitle.Opacity = 1;
+                }
+                else
+                {
+                    RestoreActiveTabView();
+                }
+                break;
         }
+    }
+
+    private void RestoreActiveTabView()
+    {
+        int idx = _selectedIndex >= 0 ? _selectedIndex : 0;
+        _selectedIndex = -1; // force re-selection
+        SelectTab(idx);
     }
 
     private void OnActivated(object sender, WindowActivatedEventArgs args)
@@ -101,6 +136,11 @@ public sealed partial class MainWindow : Window
 
     private void SelectTab(int index)
     {
+        if (_viewModel.IsDetailViewActive)
+        {
+            _viewModel.CloseDetailPage();
+        }
+
         if (index == _selectedIndex)
         {
             if (index == 3 && _searchView is not null)
@@ -176,6 +216,23 @@ public sealed partial class MainWindow : Window
             _searchView.ResultClicked += tile => _viewModel.PlaySearchResult(tile);
         }
         return _searchView;
+    }
+
+    private async void LogsButton_Click(object sender, RoutedEventArgs e)
+    {
+        AppLogger.Info("Opening Live Diagnostics and Logs dialog...");
+        try
+        {
+            var dialog = new LogViewerDialog
+            {
+                XamlRoot = RootGrid.XamlRoot
+            };
+            await dialog.ShowAsync();
+        }
+        catch (Exception ex)
+        {
+            AppLogger.Error("Failed to display LogViewerDialog", ex);
+        }
     }
 
     private async void AccountButton_Click(object sender, RoutedEventArgs e)

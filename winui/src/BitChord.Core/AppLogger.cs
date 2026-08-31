@@ -1,13 +1,25 @@
+using System.Collections.Concurrent;
 using System.Text;
 
 namespace BitChord.Core;
+
+public record LogItem(DateTime Timestamp, string Level, string Message)
+{
+    public string FormattedTimestamp => Timestamp.ToString("HH:mm:ss.fff");
+    public string FormattedEntry => $"[{FormattedTimestamp}] [{Level,-5}] {Message}";
+}
 
 public static class AppLogger
 {
     private static readonly object _lock = new();
     private static string _logFilePath = string.Empty;
+    private static readonly ConcurrentQueue<LogItem> _recentEntries = new();
+    private const int MaxInMemoryLogs = 1000;
 
     public static string LogFilePath => _logFilePath;
+    public static event Action<LogItem>? LogEntryAdded;
+
+    public static IReadOnlyList<LogItem> GetRecentLogs() => _recentEntries.ToArray();
 
     public static void Initialize(string? customLogDir = null)
     {
@@ -51,8 +63,20 @@ public static class AppLogger
 
     private static void Log(string level, string message)
     {
-        string entry = $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] [{level,-5}] {message}";
-        
+        var item = new LogItem(DateTime.Now, level, message);
+        _recentEntries.Enqueue(item);
+        while (_recentEntries.Count > MaxInMemoryLogs && _recentEntries.TryDequeue(out _)) { }
+
+        try
+        {
+            LogEntryAdded?.Invoke(item);
+        }
+        catch
+        {
+            // Ignore subscriber errors
+        }
+
+        string entry = $"[{item.Timestamp:yyyy-MM-dd HH:mm:ss.fff}] [{level,-5}] {message}";
         Console.WriteLine(entry);
 
         if (string.IsNullOrEmpty(_logFilePath)) return;
@@ -65,8 +89,21 @@ public static class AppLogger
             }
             catch
             {
-                // Silently ignore file write failures to avoid logging recursion
+                // Silently ignore file write failures
             }
+        }
+    }
+
+    public static void ClearLogs()
+    {
+        while (_recentEntries.TryDequeue(out _)) { }
+        if (!string.IsNullOrEmpty(_logFilePath) && File.Exists(_logFilePath))
+        {
+            try
+            {
+                File.WriteAllText(_logFilePath, string.Empty);
+            }
+            catch { }
         }
     }
 }

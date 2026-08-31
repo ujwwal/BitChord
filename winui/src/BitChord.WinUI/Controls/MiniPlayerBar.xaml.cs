@@ -28,6 +28,31 @@ public sealed partial class MiniPlayerBar : UserControl
         }
     }
 
+    private string _lyricSnippet = string.Empty;
+    public string LyricSnippet
+    {
+        get => _lyricSnippet;
+        set
+        {
+            _lyricSnippet = value;
+            UpdateSubtitle();
+        }
+    }
+
+    private void UpdateSubtitle()
+    {
+        if (!string.IsNullOrWhiteSpace(_lyricSnippet))
+        {
+            ArtistOrLyricText.Text = $"🎵 {_lyricSnippet}";
+            ArtistOrLyricText.Foreground = (Microsoft.UI.Xaml.Media.Brush)Application.Current.Resources["AccentBrush"];
+        }
+        else
+        {
+            ArtistOrLyricText.Text = _song?.Artist ?? string.Empty;
+            ArtistOrLyricText.Foreground = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.ColorHelper.FromArgb(180, 255, 255, 255));
+        }
+    }
+
     private void ApplySong(Song? song)
     {
         if (song is null)
@@ -38,7 +63,7 @@ public sealed partial class MiniPlayerBar : UserControl
 
         Visibility = Visibility.Visible;
         TitleText.Text = song.Title;
-        ArtistText.Text = song.Artist;
+        UpdateSubtitle();
 
         if (!string.IsNullOrEmpty(song.ThumbnailUrl))
         {

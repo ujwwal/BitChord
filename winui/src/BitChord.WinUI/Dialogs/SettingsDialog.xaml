@@ -61,8 +61,11 @@
             <StackPanel Spacing="8">
                 <TextBlock Text="Diagnostics &amp; Logs" Style="{StaticResource TitleStyle}" FontSize="14" />
                 <Grid>
-                    <TextBlock Text="Log File: bitchord.log" Style="{StaticResource BodyStyle}" VerticalAlignment="Center" />
-                    <Button Content="Open Log Folder" HorizontalAlignment="Right" Click="OpenLogs_Click" />
+                    <TextBlock Text="Live real-time activity" Style="{StaticResource BodyStyle}" VerticalAlignment="Center" />
+                    <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
+                        <Button Content="View Live Logs" Click="ViewLiveLogs_Click" />
+                        <Button Content="Open Folder" Click="OpenLogs_Click" />
+                    </StackPanel>
                 </Grid>
             </StackPanel>
         </StackPanel>

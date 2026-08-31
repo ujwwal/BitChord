@@ -101,6 +101,7 @@
                     <TextBlock Text="{x:Bind Subtitle}"
                                Style="{StaticResource BodyStyle}"
                                FontSize="12"
+                               Foreground="#99FFFFFF"
                                TextTrimming="CharacterEllipsis"
                                MaxLines="1" />
                 </StackPanel>
@@ -124,24 +125,28 @@
                             <ScrollViewer HorizontalScrollBarVisibility="Auto"
                                           VerticalScrollBarVisibility="Disabled"
                                           Visibility="{x:Bind HeroVisibility, Mode=OneTime}">
-                                <ItemsRepeater ItemsSource="{x:Bind Cards}"
-                                               ItemTemplate="{StaticResource HeroCardTemplate}">
-                                    <ItemsRepeater.Layout>
-                                        <StackLayout Orientation="Horizontal" />
-                                    </ItemsRepeater.Layout>
-                                </ItemsRepeater>
+                                <ItemsControl ItemsSource="{x:Bind Cards}"
+                                              ItemTemplate="{StaticResource HeroCardTemplate}">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <StackPanel Orientation="Horizontal" />
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                </ItemsControl>
                             </ScrollViewer>
 
                             <!-- Compact row (square cards) -->
                             <ScrollViewer HorizontalScrollBarVisibility="Auto"
                                           VerticalScrollBarVisibility="Disabled"
                                           Visibility="{x:Bind CompactVisibility, Mode=OneTime}">
-                                <ItemsRepeater ItemsSource="{x:Bind Cards}"
-                                               ItemTemplate="{StaticResource CompactCardTemplate}">
-                                    <ItemsRepeater.Layout>
-                                        <StackLayout Orientation="Horizontal" />
-                                    </ItemsRepeater.Layout>
-                                </ItemsRepeater>
+                                <ItemsControl ItemsSource="{x:Bind Cards}"
+                                              ItemTemplate="{StaticResource CompactCardTemplate}">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <StackPanel Orientation="Horizontal" />
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                </ItemsControl>
                             </ScrollViewer>
                         </StackPanel>
                     </DataTemplate>

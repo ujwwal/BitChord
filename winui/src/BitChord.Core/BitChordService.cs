@@ -1,10 +1,19 @@
+using System.Net.Http;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 
 namespace BitChord.Core;
 
 public sealed class BitChordService
 {
+    private static readonly HttpClient ProbeClient = new() { Timeout = TimeSpan.FromSeconds(6) };
     private readonly AnonymousInnertubeClient _client;
+    private readonly LrcLibClient _lrcClient = new();
+    private readonly AudioStreamCache _audioCache = new();
+    private readonly CanvasService _canvasService = new();
+
+    public AudioStreamCache AudioCache => _audioCache;
+    public CanvasService Canvas => _canvasService;
 
     public BitChordService(AnonymousInnertubeClient? client = null)
     {
@@ -88,6 +97,15 @@ public sealed class BitChordService
         return InnertubeParser.ParseWatchQueue(response);
     }
 
+    public async Task<IReadOnlyList<LyricLine>?> GetLyricsAsync(
+        string title,
+        string artist,
+        long durationMs,
+        CancellationToken cancellationToken = default)
+    {
+        return await _lrcClient.GetLyricsAsync(title, artist, durationMs, cancellationToken).ConfigureAwait(false);
+    }
+
     public async Task<string?> GetStreamUrlAsync(
         string videoId,
         CancellationToken cancellationToken = default)
@@ -103,8 +121,10 @@ public sealed class BitChordService
         InnertubePlayerClient[] clients =
         [
             InnertubePlayerClient.AndroidMusic,
+            InnertubePlayerClient.TvHtml5,
             InnertubePlayerClient.AndroidVr,
-            InnertubePlayerClient.TvHtml5
+            InnertubePlayerClient.Ios,
+            InnertubePlayerClient.IosRecent
         ];
 
         foreach (var client in clients)
@@ -114,20 +134,29 @@ public sealed class BitChordService
                 JsonElement response = await _client.PlayerAsync(videoId, client, cancellationToken)
                     .ConfigureAwait(false);
 
-                var audio = ExtractBestAudioFormat(response);
-                if (audio is not null)
+                var candidates = ExtractAudioFormats(response);
+                foreach (var candidate in candidates)
                 {
-                    return new ResolvedStream(
-                        Url: audio.Value.Url,
-                        MediaHeaders: client.GetMediaHeaders(),
-                        Bitrate: audio.Value.Bitrate,
-                        MimeType: audio.Value.MimeType,
-                        ClientName: client.ClientName
-                    );
+                    string url = PatchClientVersion(candidate.Url, client.ClientVersion);
+                    var headers = client.GetMediaHeaders();
+
+                    bool isValid = await ProbeStreamAsync(url, headers, cancellationToken).ConfigureAwait(false);
+                    if (isValid)
+                    {
+                        AppLogger.Info($"Resolved valid stream for {videoId} via {client.ClientName} ({candidate.MimeType} @ {candidate.Bitrate / 1000}kbps)");
+                        return new ResolvedStream(
+                            Url: url,
+                            MediaHeaders: headers,
+                            Bitrate: candidate.Bitrate,
+                            MimeType: candidate.MimeType,
+                            ClientName: client.ClientName
+                        );
+                    }
                 }
             }
-            catch
+            catch (Exception ex)
             {
+                AppLogger.Warn($"Client {client.ClientName} failed for {videoId}: {ex.Message}");
                 // Try next player client fallback
             }
         }
@@ -135,14 +164,54 @@ public sealed class BitChordService
         return null;
     }
 
-    private static (string Url, int Bitrate, string MimeType)? ExtractBestAudioFormat(JsonElement root)
+    private static async Task<bool> ProbeStreamAsync(string url, IReadOnlyDictionary<string, string> headers, CancellationToken token)
     {
+        try
+        {
+            using var req = new HttpRequestMessage(HttpMethod.Get, url);
+            foreach (var (k, v) in headers)
+            {
+                req.Headers.TryAddWithoutValidation(k, v);
+            }
+            req.Headers.TryAddWithoutValidation("Range", "bytes=0-16383");
+
+            using var resp = await ProbeClient.SendAsync(req, HttpCompletionOption.ResponseHeadersRead, token).ConfigureAwait(false);
+            if (!resp.IsSuccessStatusCode && (int)resp.StatusCode != 206)
+            {
+                return false;
+            }
+
+            string? contentType = resp.Content.Headers.ContentType?.MediaType;
+            if (contentType is not null && !contentType.StartsWith("audio/", StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    private static string PatchClientVersion(string url, string clientVersion)
+    {
+        if (url.Contains("cver="))
+        {
+            return Regex.Replace(url, @"cver=[^&]+", $"cver={clientVersion}");
+        }
+        return url;
+    }
+
+    private static List<(string Url, int Bitrate, string MimeType)> ExtractAudioFormats(JsonElement root)
+    {
+        List<(string Url, int Bitrate, string MimeType)> audioCandidates = new();
+
         if (!root.TryGetProperty("streamingData", out JsonElement streamingData))
         {
-            return null;
+            return audioCandidates;
         }
-
-        List<(string Url, int Bitrate, string MimeType)> audioCandidates = new();
 
         void ScanFormats(string propertyName)
         {
@@ -176,11 +245,6 @@ public sealed class BitChordService
         ScanFormats("adaptiveFormats");
         ScanFormats("formats");
 
-        if (audioCandidates.Count > 0)
-        {
-            return audioCandidates.OrderByDescending(c => c.Bitrate).First();
-        }
-
-        return null;
+        return audioCandidates.OrderByDescending(c => c.Bitrate).ToList();
     }
 }

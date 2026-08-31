@@ -1,0 +1,138 @@
+<ContentDialog
+    x:Class="BitChord.WinUI.Dialogs.LogViewerDialog"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:dialogs="using:BitChord.WinUI.Dialogs"
+    Title="Live Diagnostics &amp; Logs"
+    PrimaryButtonText="Close"
+    DefaultButton="Primary"
+    CornerRadius="16"
+    Background="{ThemeResource FloatingBarBrush}">
+
+    <Grid Width="720" Height="500" RowSpacing="12">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!-- Top Actions & Filter Bar -->
+        <Grid Grid.Row="0" ColumnSpacing="10">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+
+            <!-- Search filter -->
+            <TextBox x:Name="SearchBox"
+                     PlaceholderText="Filter logs (e.g. 403, error, stream)..."
+                     TextChanged="SearchBox_TextChanged"
+                     VerticalAlignment="Center" />
+
+            <!-- Level filter -->
+            <ComboBox x:Name="LevelFilterCombo"
+                      Grid.Column="1"
+                      SelectedIndex="0"
+                      SelectionChanged="LevelFilter_SelectionChanged"
+                      VerticalAlignment="Center">
+                <ComboBoxItem Content="All Levels" />
+                <ComboBoxItem Content="Info Only" />
+                <ComboBoxItem Content="Warnings Only" />
+                <ComboBoxItem Content="Errors Only" />
+            </ComboBox>
+
+            <!-- Copy All Button -->
+            <Button Grid.Column="2"
+                    Click="CopyAll_Click"
+                    ToolTipService.ToolTip="Copy entire log to clipboard"
+                    VerticalAlignment="Center">
+                <StackPanel Orientation="Horizontal" Spacing="6">
+                    <FontIcon Glyph="&#xE8C8;" FontSize="13" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" />
+                    <TextBlock Text="Copy" />
+                </StackPanel>
+            </Button>
+
+            <!-- Clear Button -->
+            <Button Grid.Column="3"
+                    Click="Clear_Click"
+                    ToolTipService.ToolTip="Clear current logs"
+                    VerticalAlignment="Center">
+                <FontIcon Glyph="&#xE74D;" FontSize="13" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" />
+            </Button>
+        </Grid>
+
+        <!-- Main Log List -->
+        <Border Grid.Row="1"
+                Background="{ThemeResource SurfaceVariantBrush}"
+                BorderBrush="#1AFFFFFF"
+                BorderThickness="1"
+                CornerRadius="8">
+            <ListView x:Name="LogListView"
+                      ItemsSource="{x:Bind FilteredLogs, Mode=OneWay}"
+                      SelectionMode="None"
+                      Padding="6">
+                <ListView.ItemTemplate>
+                    <DataTemplate x:DataType="dialogs:LogItemUiModel">
+                        <Grid Margin="0,2" ColumnSpacing="8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="75" />
+                                <ColumnDefinition Width="55" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+
+                            <TextBlock Text="{x:Bind FormattedTimestamp, Mode=OneTime}"
+                                       FontFamily="Consolas, Cascadia Code, monospace"
+                                       FontSize="11"
+                                       Foreground="#80FFFFFF"
+                                       VerticalAlignment="Top" />
+
+                            <Border Grid.Column="1"
+                                    HorizontalAlignment="Left"
+                                    VerticalAlignment="Top"
+                                    Padding="4,1"
+                                    CornerRadius="4"
+                                    Background="{x:Bind LevelBackground, Mode=OneTime}">
+                                <TextBlock Text="{x:Bind Level, Mode=OneTime}"
+                                           FontFamily="Consolas, Cascadia Code, monospace"
+                                           FontSize="10"
+                                           FontWeight="Bold"
+                                           Foreground="{x:Bind LevelForeground, Mode=OneTime}" />
+                            </Border>
+
+                            <TextBlock Grid.Column="2"
+                                       Text="{x:Bind Message, Mode=OneTime}"
+                                       FontFamily="Consolas, Cascadia Code, monospace"
+                                       FontSize="11"
+                                       Foreground="White"
+                                       TextWrapping="Wrap"
+                                       IsTextSelectionEnabled="True" />
+                        </Grid>
+                    </DataTemplate>
+                </ListView.ItemTemplate>
+            </ListView>
+        </Border>
+
+        <!-- Bottom File info & Open Folder -->
+        <Grid Grid.Row="2">
+            <TextBlock x:Name="LogPathText"
+                       Text="Log file: bitchord.log"
+                       FontSize="11"
+                       Foreground="#80FFFFFF"
+                       VerticalAlignment="Center"
+                       TextTrimming="CharacterEllipsis"
+                       MaxWidth="480"
+                       HorizontalAlignment="Left" />
+
+            <Button HorizontalAlignment="Right"
+                    Click="OpenLogFolder_Click"
+                    Padding="10,4">
+                <StackPanel Orientation="Horizontal" Spacing="6">
+                    <FontIcon Glyph="&#xE8B7;" FontSize="12" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" />
+                    <TextBlock Text="Open Log Folder" FontSize="12" />
+                </StackPanel>
+            </Button>
+        </Grid>
+    </Grid>
+</ContentDialog>
