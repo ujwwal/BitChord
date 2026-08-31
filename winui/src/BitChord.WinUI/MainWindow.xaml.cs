@@ -28,15 +28,12 @@ public sealed partial class MainWindow : Window
         SetTitleBar(AppTitleBar);
         ConfigureTitleBar();
 
-        // ── Now Playing View Setup ────────────────────────────────────────────
+        // â”€â”€ Now Playing View Setup â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         _nowPlayingView = new NowPlayingView(_viewModel);
-        _nowPlayingView.DismissRequested += () =>
-        {
-            NowPlayingHost.Visibility = Visibility.Collapsed;
-        };
+        _nowPlayingView.DismissRequested += HideNowPlaying;
         NowPlayingHost.Children.Add(_nowPlayingView);
 
-        // ── Tab selection ─────────────────────────────────────────────────────
+        // â”€â”€ Tab selection â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         BottomBar.TabSelected += SelectTab;
         RootGrid.ActualThemeChanged += (_, _) =>
         {
@@ -44,15 +41,11 @@ public sealed partial class MainWindow : Window
             ConfigureTitleBar();
         };
 
-        // ── MiniPlayerBar ←→ ViewModel Wiring ────────────────────────────────
+        // â”€â”€ MiniPlayerBar â†â†’ ViewModel Wiring â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         _viewModel.PropertyChanged += OnViewModelPropertyChanged;
         MiniPlayer.PlayPauseClicked += (_, _) => _viewModel.TogglePlayPause();
         MiniPlayer.NextClicked += (_, _) => _viewModel.PlayNext();
-        MiniPlayer.BarClicked += (_, _) =>
-        {
-            // Open full-screen Now Playing view
-            NowPlayingHost.Visibility = Visibility.Visible;
-        };
+        MiniPlayer.BarClicked += (_, _) => ShowNowPlaying();
 
         Activated += OnActivated;
         SelectTab(0);
@@ -64,9 +57,7 @@ public sealed partial class MainWindow : Window
         {
             case nameof(AppShellViewModel.CurrentSong):
                 MiniPlayer.Song = _viewModel.CurrentSong;
-                MiniPlayer.Visibility = _viewModel.CurrentSong is not null && NowPlayingHost.Visibility != Visibility.Visible
-                    ? Visibility.Visible
-                    : Visibility.Collapsed;
+                UpdateMiniPlayerVisibility();
                 break;
 
             case nameof(AppShellViewModel.IsPlaying):
@@ -77,6 +68,31 @@ public sealed partial class MainWindow : Window
                 MiniPlayer.IsLoading = _viewModel.IsLoading;
                 break;
         }
+    }
+
+    private void ShowNowPlaying()
+    {
+        if (_viewModel.CurrentSong is null)
+        {
+            return;
+        }
+
+        NowPlayingHost.Visibility = Visibility.Visible;
+        UpdateMiniPlayerVisibility();
+    }
+
+    private void HideNowPlaying()
+    {
+        NowPlayingHost.Visibility = Visibility.Collapsed;
+        UpdateMiniPlayerVisibility();
+    }
+
+    private void UpdateMiniPlayerVisibility()
+    {
+        MiniPlayer.Visibility = _viewModel.CurrentSong is not null &&
+            NowPlayingHost.Visibility != Visibility.Visible
+            ? Visibility.Visible
+            : Visibility.Collapsed;
     }
 
     private void OnActivated(object sender, WindowActivatedEventArgs args)
@@ -195,3 +211,4 @@ public sealed partial class MainWindow : Window
         }
     }
 }
+
