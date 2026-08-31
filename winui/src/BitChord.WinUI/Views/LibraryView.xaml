@@ -5,12 +5,15 @@
     xmlns:vm="using:BitChord.WinUI">
 
     <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-        <StackPanel Padding="16,8,16,100">
-            <TextBlock Margin="0,0,0,16" Text="Library" Style="{StaticResource DisplayTitleStyle}" />
+        <StackPanel Padding="24,12,24,130" HorizontalAlignment="Stretch">
+            <TextBlock Margin="0,0,0,18" Text="Library" Style="{StaticResource DisplayTitleStyle}" />
 
             <!-- Your Replay Banner -->
-            <Border Margin="0,4,0,24" CornerRadius="18" Tapped="Replay_Tapped" IsHitTestVisible="True">
-                <Grid>
+            <Border Margin="0,4,0,24" CornerRadius="18"
+                    Background="Transparent"
+                    Tapped="Replay_Tapped"
+                    IsHitTestVisible="True">
+                <Grid CornerRadius="18">
                     <Grid.Background>
                         <LinearGradientBrush StartPoint="0,0.3" EndPoint="1,0.8">
                             <GradientStop Offset="0" Color="#FF3A1C71" />
@@ -28,7 +31,7 @@
                             </LinearGradientBrush>
                         </Border.Background>
                     </Border>
-                    <Grid Padding="18" ColumnSpacing="12">
+                    <Grid Padding="20,18" ColumnSpacing="12">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="Auto" />
@@ -49,28 +52,38 @@
                         <FontIcon Grid.Column="1"
                                   Glyph="&#xE76C;"
                                   FontSize="16"
+                                  FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
                                   Foreground="#D9FFFFFF" />
                     </Grid>
                 </Grid>
             </Border>
 
             <TextBlock Margin="0,0,0,12" Text="On Device" Style="{StaticResource SectionTitleStyle}" />
-            <ScrollViewer HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Disabled">
+            
+            <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
                 <ItemsRepeater x:Name="TilesHost" Margin="0,0,0,24">
                     <ItemsRepeater.Layout>
                         <StackLayout Orientation="Horizontal" />
                     </ItemsRepeater.Layout>
                     <ItemsRepeater.ItemTemplate>
                         <DataTemplate x:DataType="vm:LibraryTile">
-                            <StackPanel Width="144" Spacing="6" Margin="0,0,14,0"
-                                        Tapped="Tile_Tapped"
-                                        IsHitTestVisible="True">
-                                <Border Height="144" Background="{ThemeResource SurfaceVariantBrush}" CornerRadius="14">
-                                    <FontIcon Glyph="{x:Bind IconGlyph}" FontSize="36" Foreground="{StaticResource AccentBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" />
-                                </Border>
-                                <TextBlock Text="{x:Bind Title}" Style="{StaticResource TitleStyle}" FontSize="14" TextTrimming="CharacterEllipsis" />
-                                <TextBlock Text="{x:Bind Subtitle}" Style="{StaticResource BodyStyle}" FontSize="12" TextTrimming="CharacterEllipsis" />
-                            </StackPanel>
+                            <Border Width="150" Margin="0,0,16,0"
+                                    Background="Transparent"
+                                    Tapped="Tile_Tapped"
+                                    IsHitTestVisible="True">
+                                <StackPanel Spacing="6">
+                                    <Border Height="150" Background="{ThemeResource SurfaceVariantBrush}" CornerRadius="14">
+                                        <FontIcon Glyph="{x:Bind IconGlyph}"
+                                                  FontSize="38"
+                                                  FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                                  Foreground="{StaticResource AccentBrush}"
+                                                  HorizontalAlignment="Center"
+                                                  VerticalAlignment="Center" />
+                                    </Border>
+                                    <TextBlock Text="{x:Bind Title}" Style="{StaticResource TitleStyle}" FontSize="14" TextTrimming="CharacterEllipsis" />
+                                    <TextBlock Text="{x:Bind Subtitle}" Style="{StaticResource BodyStyle}" FontSize="12" TextTrimming="CharacterEllipsis" />
+                                </StackPanel>
+                            </Border>
                         </DataTemplate>
                     </ItemsRepeater.ItemTemplate>
                 </ItemsRepeater>

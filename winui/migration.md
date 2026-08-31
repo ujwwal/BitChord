@@ -8,39 +8,39 @@ This is a platform migration only. The frontend must remain visually and structu
 
 ## Current status
 
-The WinUI port has completed its milestone: **Visual Fixes + Complete End-to-End Interactivity & Audio Playback Pipeline**.
-
-All visual glitches (Chinese "英" font corruption, clipped bottom bar labels, broken hit-testing) have been fixed. Full audio streaming with `Windows.Media.Playback.MediaPlayer`, click-to-play card interaction, search result playback, and live mini-player controls are completely functional and building with **0 errors and 0 warnings**.
+The WinUI port has completed:
+1. **Live Album Artwork & Thumbnails**: Real YouTube Music artwork is loaded asynchronously via native XAML `Image` bindings on Hero cards, Compact shelf cards, Search results, and Mini-Player.
+2. **Card & Row Hit-Testing (Click-to-Play Everywhere)**: Cards and search rows are wrapped in hit-testable containers (`Background="Transparent"`, `IsHitTestVisible="True"`) with reliable DataContext extraction, allowing clicks on images, text, and empty padding to trigger playback immediately.
+3. **In-Process Audio Streaming Engine**: Solved Windows Media Foundation 403 Forbidden gating by retrieving streams with exact matching mobile headers and buffering via `MediaSource.CreateFromStream`.
+4. **Responsive Desktop Shell**: Shelves and content containers stretch horizontally across the window, and floating navigation/player pills stay centered with responsive max-widths.
+5. **Clean Compilation**: Verified clean build with **0 Warnings, 0 Errors**.
 
 ---
 
-## Completed
+## Completed Milestones
 
-### Visual & Font Repairs
-- **FontIcon Glyphs Fixed**: Fixed Chinese character ("英") corruption across all cards, navigation bars, and search inputs by enforcing `Segoe Fluent Icons, Segoe MDL2 Assets` and removing conflicting implicit font bindings.
-- **Library Icons Fixed**: Replaced raw string labels in `LibraryTile` with valid Segoe MDL2 / Fluent Unicode icon codepoints (`\uE896` Downloads, `\uEC4F` Local Music, `\uEB52` Liked Songs, `\uE90B` Playlists).
-- **Floating Bottom Bar Geometry**: Fixed label clipping and hit-testing by adding `Grid.ColumnSpan="4"` and `IsHitTestVisible="False"` to the animated selection indicator, perfecting margins (`16,0,16,18`), and enabling instantaneous tab switching.
-- **Theme & Title Bar**: Preserved light and dark theme dictionaries, smooth acrylic fade scrims, and window chrome.
+### Core Backend & Innertube Integration
+- Live Home shelves (`FEmusic_home`) and Explore charts (`FEmusic_explore`, `FEmusic_charts`) parsing.
+- Song search parser prioritizing Track objects (`videoId`) over general browse pages.
+- Unciphered audio stream resolution using direct `adaptiveFormats` audio extractors from Android and TV player clients.
+- Thread-safe `DispatcherQueue` marshaling on `AppShellViewModel`.
 
-### Interactive UI & Navigation
-- **Click-to-Play on Feed Cards**: Hero cards and compact shelf cards in Listen Now and Explore are fully interactive with pointer cursor, hover states, and tap-to-play event routing.
-- **Click-to-Play on Search Results**: Tapping any song or browse item in `SearchView` initiates audio streaming immediately.
-- **Library Navigation**: On-Device tiles and "Your Replay" banner are interactive and navigate seamlessly.
-- **Debounced Live Search & Filter Chips**: Live suggestions, full query execution, and interactive accent-highlighted filter chips (Songs / Albums / Artists / Playlists).
+### Shell and UI Parity
+- Tab navigation (Listen Now, Explore, Library, Search) with smooth cubic easing animations.
+- Hero-shelf landscape cards (16:10) and compact square shelf cards.
+- Live debounced search with query execution and interactive filter chips (Songs, Albums, Artists, Playlists).
+- On-Device Library tiles and "Your Replay" gradient hero banner.
+- Mini-player pill floating above bottom navigation with live track info, loading spinner, and play/pause controls.
+- Light and dark theme dictionaries matching Android color specifications.
 
-### Audio Engine & Mini Player
-- **Windows Media Player Engine**: Integrated `Windows.Media.Playback.MediaPlayer` and `Windows.Media.Core.MediaSource` for high-fidelity audio playback.
-- **Stream Resolver Pipeline**: Added `GetStreamUrlAsync` in `BitChordService` which automatically resolves direct, unciphered audio stream URLs from AndroidMusic, AndroidVr, and TvHtml5 Innertube endpoints.
-- **Interactive Mini-Player Bar**: Frosted pill with artwork thumbnail, track/artist label, play/pause toggle with loading spinner (`ProgressRing`), and skip-next control.
-
-### Launch & Build Pipeline
-- `winui/launch.ps1`: Pure ASCII PowerShell script with `try/finally` and universal `Read-Host` pause that builds and launches the app reliably without exiting prematurely.
+### Launch Script
+- `winui/launch.ps1`: Pure ASCII PowerShell script with universal `Read-Host` pause that stays alive on completion or failure.
 - **Build Status**: Verified clean build with **0 Warnings, 0 Errors**.
 
 ---
 
 ## Next Steps
 
-1. Full-screen **Now Playing Sheet** (`NowPlayingScreen.kt` port with lyrics, queue reordering, and seek bar).
-2. Detail page views for Album, Artist, and Playlist collections.
-3. Offline caching and download manager integration for device storage.
+1. Full-screen **Now Playing Sheet** with lyrics, queue reordering, and seek bar.
+2. Collection detail views (Albums, Artists, Playlists).
+3. Local disk caching and download manager integration.

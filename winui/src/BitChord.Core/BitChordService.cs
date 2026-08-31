@@ -88,11 +88,15 @@ public sealed class BitChordService
         return InnertubeParser.ParseWatchQueue(response);
     }
 
-    /// <summary>
-    /// Resolves an unciphered audio stream URL for a given video ID by querying
-    /// AndroidMusic, AndroidVr, or TvHtml5 player endpoints.
-    /// </summary>
     public async Task<string?> GetStreamUrlAsync(
+        string videoId,
+        CancellationToken cancellationToken = default)
+    {
+        var resolved = await GetResolvedStreamAsync(videoId, cancellationToken).ConfigureAwait(false);
+        return resolved?.Url;
+    }
+
+    public async Task<ResolvedStream?> GetResolvedStreamAsync(
         string videoId,
         CancellationToken cancellationToken = default)
     {
@@ -110,10 +114,16 @@ public sealed class BitChordService
                 JsonElement response = await _client.PlayerAsync(videoId, client, cancellationToken)
                     .ConfigureAwait(false);
 
-                string? url = ExtractDirectAudioUrl(response);
-                if (!string.IsNullOrEmpty(url))
+                var audio = ExtractBestAudioFormat(response);
+                if (audio is not null)
                 {
-                    return url;
+                    return new ResolvedStream(
+                        Url: audio.Value.Url,
+                        MediaHeaders: client.GetMediaHeaders(),
+                        Bitrate: audio.Value.Bitrate,
+                        MimeType: audio.Value.MimeType,
+                        ClientName: client.ClientName
+                    );
                 }
             }
             catch
@@ -125,14 +135,14 @@ public sealed class BitChordService
         return null;
     }
 
-    private static string? ExtractDirectAudioUrl(JsonElement root)
+    private static (string Url, int Bitrate, string MimeType)? ExtractBestAudioFormat(JsonElement root)
     {
         if (!root.TryGetProperty("streamingData", out JsonElement streamingData))
         {
             return null;
         }
 
-        List<(string Url, int Bitrate)> audioCandidates = new();
+        List<(string Url, int Bitrate, string MimeType)> audioCandidates = new();
 
         void ScanFormats(string propertyName)
         {
@@ -158,7 +168,7 @@ public sealed class BitChordService
                     {
                         bitrate = bVal;
                     }
-                    audioCandidates.Add((url, bitrate));
+                    audioCandidates.Add((url, bitrate, mimeType));
                 }
             }
         }
@@ -168,8 +178,7 @@ public sealed class BitChordService
 
         if (audioCandidates.Count > 0)
         {
-            // Pick highest bitrate audio stream
-            return audioCandidates.OrderByDescending(c => c.Bitrate).First().Url;
+            return audioCandidates.OrderByDescending(c => c.Bitrate).First();
         }
 
         return null;

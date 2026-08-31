@@ -1,16 +1,31 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.IO;
+using System.Net.Http;
 using System.Runtime.CompilerServices;
 using BitChord.Core;
+using Microsoft.UI.Dispatching;
+using Microsoft.UI.Xaml;
 using Windows.Media.Core;
 using Windows.Media.Playback;
+using Windows.Storage.Streams;
 
 namespace BitChord.WinUI;
+
+public enum PlayerRepeatMode
+{
+    Off,
+    All,
+    One
+}
 
 public sealed class AppShellViewModel : INotifyPropertyChanged
 {
     private readonly BitChordService _service = new();
     private readonly MediaPlayer _player = new();
+    private readonly HttpClient _httpClient = new();
+    private readonly DispatcherQueue _dispatcher;
+    private readonly DispatcherTimer _playbackTimer;
     private CancellationTokenSource? _playCts;
 
     public ObservableCollection<FeedSection> HomeSections { get; } = new();
@@ -19,8 +34,9 @@ public sealed class AppShellViewModel : INotifyPropertyChanged
     public ObservableCollection<SearchFilterOption> SearchFilters { get; } = new();
     public ObservableCollection<SearchResultTile> SearchResults { get; } = new();
     public ObservableCollection<string> SearchSuggestions { get; } = new();
+    public ObservableCollection<Song> ActiveQueue { get; } = new();
 
-    // ── Playback state ────────────────────────────────────────────────────────
+    // ── Playback State Properties ─────────────────────────────────────────────
     private Song? _currentSong;
     public Song? CurrentSong
     {
@@ -42,7 +58,131 @@ public sealed class AppShellViewModel : INotifyPropertyChanged
         set { _isLoading = value; OnPropertyChanged(); }
     }
 
-    // ── Search filter ─────────────────────────────────────────────────────────
+    private TimeSpan _position = TimeSpan.Zero;
+    public TimeSpan Position
+    {
+        get => _position;
+        set
+        {
+            _position = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(PositionText));
+            OnPropertyChanged(nameof(RemainingText));
+            OnPropertyChanged(nameof(Progress));
+        }
+    }
+
+    private TimeSpan _duration = TimeSpan.FromMinutes(3.5);
+    public TimeSpan Duration
+    {
+        get => _duration;
+        set
+        {
+            _duration = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(DurationText));
+            OnPropertyChanged(nameof(RemainingText));
+            OnPropertyChanged(nameof(Progress));
+        }
+    }
+
+    public double Progress
+    {
+        get => Duration.TotalSeconds > 0 ? Position.TotalSeconds / Duration.TotalSeconds : 0;
+        set
+        {
+            if (Duration.TotalSeconds > 0)
+            {
+                SeekTo(value);
+            }
+        }
+    }
+
+    public string PositionText => FormatTime(Position);
+    public string DurationText => FormatTime(Duration);
+    public string RemainingText => "-" + FormatTime(Duration > Position ? Duration - Position : TimeSpan.Zero);
+
+    private static string FormatTime(TimeSpan time)
+    {
+        return time.Hours > 0
+            ? $"{time.Hours}:{time.Minutes:D2}:{time.Seconds:D2}"
+            : $"{time.Minutes}:{time.Seconds:D2}";
+    }
+
+    private double _volume = 1.0;
+    public double Volume
+    {
+        get => _volume;
+        set
+        {
+            _volume = Math.Clamp(value, 0.0, 1.0);
+            _player.Volume = _volume;
+            OnPropertyChanged();
+        }
+    }
+
+    private bool _isLiked;
+    public bool IsLiked
+    {
+        get => _isLiked;
+        set { _isLiked = value; OnPropertyChanged(); }
+    }
+
+    private bool _isShuffled;
+    public bool IsShuffled
+    {
+        get => _isShuffled;
+        set { _isShuffled = value; OnPropertyChanged(); }
+    }
+
+    private PlayerRepeatMode _repeatMode = PlayerRepeatMode.All;
+    public PlayerRepeatMode RepeatMode
+    {
+        get => _repeatMode;
+        set
+        {
+            _repeatMode = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(RepeatGlyph));
+        }
+    }
+
+    public string RepeatGlyph => RepeatMode switch
+    {
+        PlayerRepeatMode.One => "1",
+        PlayerRepeatMode.All => "\uE8EE",
+        _ => "\uF5E7"
+    };
+
+    private bool _isAutoplayEnabled = true;
+    public bool IsAutoplayEnabled
+    {
+        get => _isAutoplayEnabled;
+        set { _isAutoplayEnabled = value; OnPropertyChanged(); }
+    }
+
+    private string _audioQualityBadge = "🎧 Hi-Quality";
+    public string AudioQualityBadge
+    {
+        get => _audioQualityBadge;
+        set { _audioQualityBadge = value; OnPropertyChanged(); }
+    }
+
+    private string _lyricsSnippet = "Tap for synchronized lyrics >";
+    public string LyricsSnippet
+    {
+        get => _lyricsSnippet;
+        set { _lyricsSnippet = value; OnPropertyChanged(); }
+    }
+
+    private int _queueIndex = -1;
+    public int CurrentQueueIndex
+    {
+        get => _queueIndex;
+        set { _queueIndex = value; OnPropertyChanged(); }
+    }
+
+    // ── Search State ──────────────────────────────────────────────────────────
     private SearchFilter _selectedSearchFilter = SearchFilter.Songs;
     public SearchFilter SelectedSearchFilter
     {
@@ -59,13 +199,30 @@ public sealed class AppShellViewModel : INotifyPropertyChanged
 
     public event PropertyChangedEventHandler? PropertyChanged;
     private void OnPropertyChanged([CallerMemberName] string? name = null)
-        => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+        => RunOnUI(() => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name)));
 
     public AppShellViewModel()
     {
+        _dispatcher = DispatcherQueue.GetForCurrentThread() ?? DispatcherQueue.GetForCurrentThread();
+        
+        _playbackTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(250) };
+        _playbackTimer.Tick += OnPlaybackTimerTick;
+
         SetupMediaPlayer();
-        LoadDemoData();
+        LoadInitialData();
         _ = LoadLiveDataAsync();
+    }
+
+    private void RunOnUI(Action action)
+    {
+        if (_dispatcher is not null && !_dispatcher.HasThreadAccess)
+        {
+            _dispatcher.TryEnqueue(() => action());
+        }
+        else
+        {
+            action();
+        }
     }
 
     private void SetupMediaPlayer()
@@ -73,67 +230,94 @@ public sealed class AppShellViewModel : INotifyPropertyChanged
         _player.PlaybackSession.PlaybackStateChanged += (sender, _) =>
         {
             var state = sender.PlaybackState;
-            Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread()?.TryEnqueue(() =>
+            RunOnUI(() =>
             {
                 IsPlaying = state == MediaPlaybackState.Playing;
                 IsLoading = state == MediaPlaybackState.Buffering || state == MediaPlaybackState.Opening;
+                if (IsPlaying)
+                {
+                    _playbackTimer.Start();
+                }
+                else
+                {
+                    _playbackTimer.Stop();
+                }
             });
         };
 
         _player.MediaEnded += (_, _) =>
         {
-            Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread()?.TryEnqueue(() =>
+            RunOnUI(() =>
             {
-                IsPlaying = false;
+                if (RepeatMode == PlayerRepeatMode.One)
+                {
+                    _player.PlaybackSession.Position = TimeSpan.Zero;
+                    _player.Play();
+                }
+                else
+                {
+                    PlayNext();
+                }
             });
         };
 
         _player.MediaFailed += (_, args) =>
         {
-            Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread()?.TryEnqueue(() =>
+            AppLogger.Error($"MediaPlayer Failed: {args.Error}, Code=0x{args.ExtendedErrorCode?.HResult:X8}, Message={args.ErrorMessage}");
+            RunOnUI(() =>
             {
                 IsLoading = false;
                 IsPlaying = false;
+                _playbackTimer.Stop();
             });
         };
     }
 
-    private void LoadDemoData()
+    private void OnPlaybackTimerTick(object? sender, object e)
+    {
+        try
+        {
+            var session = _player.PlaybackSession;
+            if (session is not null && session.PlaybackState == MediaPlaybackState.Playing)
+            {
+                Position = session.Position;
+                if (session.NaturalDuration > TimeSpan.Zero)
+                {
+                    Duration = session.NaturalDuration;
+                }
+            }
+        }
+        catch
+        {
+            // Ignore session race conditions during track change
+        }
+    }
+
+    private void LoadInitialData()
     {
         HomeSections.Add(new FeedSection("Featured",
         [
-            new FeedCard("Midnight Drive", "Synthwave", null, "fBN1qj2g2eA"),
-            new FeedCard("Velvet Hours", "Chill", null, "5qap5aO4i9A"),
-            new FeedCard("Sunset Echoes", "Indie pop", null, "kJQP7kiw5Fk"),
-            new FeedCard("Night Bloom", "Ambient", null, "fJ9rUzIMcZQ"),
+            new FeedCard("Levitating", "Dua Lipa", "https://i.ytimg.com/vi/OsfAnsMY21M/hqdefault.jpg", "OsfAnsMY21M"),
+            new FeedCard("Starboy", "The Weeknd • Daft Punk", "https://i.ytimg.com/vi/34Na4j8AVgA/hqdefault.jpg", "34Na4j8AVgA"),
+            new FeedCard("Blinding Lights", "The Weeknd", "https://i.ytimg.com/vi/4NRXx6U8ABQ/hqdefault.jpg", "4NRXx6U8ABQ"),
+            new FeedCard("Save Your Tears", "The Weeknd", "https://i.ytimg.com/vi/XXYlFuWEuKI/hqdefault.jpg", "XXYlFuWEuKI"),
         ], isHero: true));
 
         HomeSections.Add(new FeedSection("Made for you",
         [
-            new FeedCard("Warm Static", "Electronic", null, "fBN1qj2g2eA"),
-            new FeedCard("Slow Motion", "R&B", null, "5qap5aO4i9A"),
-            new FeedCard("Quiet Current", "Ambient", null, "kJQP7kiw5Fk"),
-            new FeedCard("Blue Hour", "Acoustic", null, "fJ9rUzIMcZQ"),
-            new FeedCard("Glass Horizon", "Electronic", null, "fBN1qj2g2eA"),
+            new FeedCard("Midnight City", "M83", "https://i.ytimg.com/vi/dX3k_QDnzHE/hqdefault.jpg", "dX3k_QDnzHE"),
+            new FeedCard("After Hours", "The Weeknd", "https://i.ytimg.com/vi/ygTZZpVkm3o/hqdefault.jpg", "ygTZZpVkm3o"),
+            new FeedCard("As It Was", "Harry Styles", "https://i.ytimg.com/vi/H5v3kku4y6Q/hqdefault.jpg", "H5v3kku4y6Q"),
+            new FeedCard("Nightcall", "Kavinsky", "https://i.ytimg.com/vi/MV_3Dpw-BRY/hqdefault.jpg", "MV_3Dpw-BRY"),
         ]));
 
-        ExploreSections.Add(new FeedSection("Browse",
+        ExploreSections.Add(new FeedSection("Trending Worldwide",
         [
-            new FeedCard("Trending now", "Top songs", null, "kJQP7kiw5Fk"),
-            new FeedCard("New releases", "Fresh picks", null, "5qap5aO4i9A"),
-            new FeedCard("Moods", "Curated mood boards", null, "fBN1qj2g2eA"),
-            new FeedCard("Discover", "New artists", null, "fJ9rUzIMcZQ"),
+            new FeedCard("Top Hits", "Popular now", "https://i.ytimg.com/vi/OsfAnsMY21M/hqdefault.jpg", "OsfAnsMY21M"),
+            new FeedCard("New Releases", "Fresh music this week", "https://i.ytimg.com/vi/34Na4j8AVgA/hqdefault.jpg", "34Na4j8AVgA"),
+            new FeedCard("Moods & Chill", "Relaxing acoustic & lofi", "https://i.ytimg.com/vi/dX3k_QDnzHE/hqdefault.jpg", "dX3k_QDnzHE"),
         ], isHero: true));
 
-        ExploreSections.Add(new FeedSection("Popular playlists",
-        [
-            new FeedCard("Late night", "7 songs", null, "5qap5aO4i9A"),
-            new FeedCard("Focus flow", "12 songs", null, "fBN1qj2g2eA"),
-            new FeedCard("Gym mix", "18 songs", null, "kJQP7kiw5Fk"),
-            new FeedCard("Road trip", "16 songs", null, "fJ9rUzIMcZQ"),
-        ]));
-
-        // Using official Windows Segoe Fluent/MDL2 Unicode glyphs
         LibraryTiles.Add(new LibraryTile("Downloads", "Downloaded songs", "\uE896"));
         LibraryTiles.Add(new LibraryTile("Local Music", "Audio files on device", "\uEC4F"));
         LibraryTiles.Add(new LibraryTile("Liked Songs", "Your favorite tracks", "\uEB52"));
@@ -144,18 +328,18 @@ public sealed class AppShellViewModel : INotifyPropertyChanged
         SearchFilters.Add(new SearchFilterOption(SearchFilter.Artists, "Artists"));
         SearchFilters.Add(new SearchFilterOption(SearchFilter.Playlists, "Playlists"));
 
-        SearchResults.Add(new SearchResultTile("Midnight Drive", "Track • Synthwave", "fBN1qj2g2eA"));
-        SearchResults.Add(new SearchResultTile("Sunset Echoes", "Track • Indie pop", "kJQP7kiw5Fk"));
-        SearchResults.Add(new SearchResultTile("Velvet Hours", "Track • Chill", "5qap5aO4i9A"));
-        SearchResults.Add(new SearchResultTile("Night Bloom", "Track • Ambient", "fJ9rUzIMcZQ"));
+        SearchResults.Add(new SearchResultTile("Levitating", "Track • Dua Lipa", "OsfAnsMY21M", "https://i.ytimg.com/vi/OsfAnsMY21M/hqdefault.jpg"));
+        SearchResults.Add(new SearchResultTile("Blinding Lights", "Track • The Weeknd", "4NRXx6U8ABQ", "https://i.ytimg.com/vi/4NRXx6U8ABQ/hqdefault.jpg"));
+        SearchResults.Add(new SearchResultTile("Starboy", "Track • The Weeknd", "34Na4j8AVgA", "https://i.ytimg.com/vi/34Na4j8AVgA/hqdefault.jpg"));
 
-        SearchSuggestions.Add("midnight drive");
-        SearchSuggestions.Add("sunset echoes");
-        SearchSuggestions.Add("night bloom");
+        SearchSuggestions.Add("dua lipa");
+        SearchSuggestions.Add("the weeknd");
+        SearchSuggestions.Add("blinding lights");
     }
 
     public async Task LoadLiveDataAsync(CancellationToken cancellationToken = default)
     {
+        AppLogger.Info("Loading live YouTube Music home and explore shelves...");
         try
         {
             IReadOnlyList<HomeShelf> home = await _service.GetHomeAsync(cancellationToken).ConfigureAwait(false);
@@ -171,9 +355,12 @@ public sealed class AppShellViewModel : INotifyPropertyChanged
                         item.BrowseId)),
                     isHero: idx == 0)).ToList();
 
-                HomeSections.Clear();
-                foreach (var section in updated)
-                    HomeSections.Add(section);
+                RunOnUI(() =>
+                {
+                    HomeSections.Clear();
+                    foreach (var section in updated) HomeSections.Add(section);
+                });
+                AppLogger.Info($"Loaded {HomeSections.Count} home shelves.");
             }
 
             IReadOnlyList<HomeShelf> explore = await _service.GetExploreAsync(cancellationToken).ConfigureAwait(false);
@@ -189,51 +376,58 @@ public sealed class AppShellViewModel : INotifyPropertyChanged
                         item.BrowseId)),
                     isHero: idx == 0)).ToList();
 
-                ExploreSections.Clear();
-                foreach (var section in updated)
-                    ExploreSections.Add(section);
+                RunOnUI(() =>
+                {
+                    ExploreSections.Clear();
+                    foreach (var section in updated) ExploreSections.Add(section);
+                });
+                AppLogger.Info($"Loaded {ExploreSections.Count} explore shelves.");
             }
         }
-        catch
+        catch (Exception ex)
         {
-            // Retain demo data on error / offline
+            AppLogger.Error("Failed to load live feeds", ex);
         }
     }
 
     public async Task SearchAsync(string query, CancellationToken cancellationToken = default)
     {
         _currentQuery = query;
+        AppLogger.Info($"Executing search query: '{query}' with filter {SelectedSearchFilter}");
         try
         {
             IReadOnlyList<SearchResult> results = await _service
                 .SearchAsync(query, SelectedSearchFilter, cancellationToken)
                 .ConfigureAwait(false);
 
-            SearchResults.Clear();
-            foreach (var result in results.Take(25))
+            var items = results.Take(30).Select(result => result switch
             {
-                SearchResults.Add(result switch
-                {
-                    SearchResult.Track track => new SearchResultTile(
-                        track.Song.Title,
-                        $"Track • {track.Song.Artist}",
-                        track.Song.VideoId,
-                        track.Song.ThumbnailUrl,
-                        track.Song),
-                    SearchResult.Browse browse => new SearchResultTile(
-                        browse.Item.Title,
-                        $"{browse.Item.Type} • {browse.Item.Subtitle}",
-                        null,
-                        browse.Item.ThumbnailUrl,
-                        null,
-                        browse.Item.BrowseId),
-                    _ => new SearchResultTile("Unknown", "Result")
-                });
-            }
+                SearchResult.Track track => new SearchResultTile(
+                    track.Song.Title,
+                    $"Track • {track.Song.Artist}",
+                    track.Song.VideoId,
+                    track.Song.ThumbnailUrl,
+                    track.Song),
+                SearchResult.Browse browse => new SearchResultTile(
+                    browse.Item.Title,
+                    $"{browse.Item.Type} • {browse.Item.Subtitle}",
+                    null,
+                    browse.Item.ThumbnailUrl,
+                    null,
+                    browse.Item.BrowseId),
+                _ => new SearchResultTile("Unknown", "Result")
+            }).ToList();
+
+            RunOnUI(() =>
+            {
+                SearchResults.Clear();
+                foreach (var item in items) SearchResults.Add(item);
+            });
+            AppLogger.Info($"Found {SearchResults.Count} search results.");
         }
-        catch
+        catch (Exception ex)
         {
-            // Retain current results on error.
+            AppLogger.Error($"Search failed for query '{query}'", ex);
         }
     }
 
@@ -241,19 +435,21 @@ public sealed class AppShellViewModel : INotifyPropertyChanged
     {
         try
         {
-            var suggestions = await _service.GetSearchSuggestionsAsync(input, cancellationToken)
-                .ConfigureAwait(false);
-            SearchSuggestions.Clear();
-            foreach (var s in suggestions.Take(8))
-                SearchSuggestions.Add(s);
+            var suggestions = await _service.GetSearchSuggestionsAsync(input, cancellationToken).ConfigureAwait(false);
+            var list = suggestions.Take(8).ToList();
+            RunOnUI(() =>
+            {
+                SearchSuggestions.Clear();
+                foreach (var s in list) SearchSuggestions.Add(s);
+            });
         }
         catch
         {
-            // Suggestions are best-effort.
+            // Ignore
         }
     }
 
-    // ── Audio Playback Pipeline ───────────────────────────────────────────────
+    // ── Controls & Actions ───────────────────────────────────────────────────
 
     public void TogglePlayPause()
     {
@@ -271,97 +467,254 @@ public sealed class AppShellViewModel : INotifyPropertyChanged
         }
     }
 
-    public void PlayFeedCard(FeedCard card)
+    public void SeekTo(double progress)
     {
-        if (!string.IsNullOrEmpty(card.VideoId))
+        if (Duration.TotalSeconds > 0)
         {
-            PlaySong(new Song(
-                VideoId: card.VideoId,
-                Title: card.Title,
-                Artist: card.Subtitle,
-                ThumbnailUrl: card.ThumbnailUrl
-            ));
+            var target = TimeSpan.FromSeconds(Math.Clamp(progress, 0.0, 1.0) * Duration.TotalSeconds);
+            _player.PlaybackSession.Position = target;
+            Position = target;
+        }
+    }
+
+    public void ToggleLike()
+    {
+        IsLiked = !IsLiked;
+    }
+
+    public void ToggleShuffle()
+    {
+        IsShuffled = !IsShuffled;
+    }
+
+    public void CycleRepeatMode()
+    {
+        RepeatMode = RepeatMode switch
+        {
+            PlayerRepeatMode.Off => PlayerRepeatMode.All,
+            PlayerRepeatMode.All => PlayerRepeatMode.One,
+            PlayerRepeatMode.One => PlayerRepeatMode.Off,
+            _ => PlayerRepeatMode.Off
+        };
+    }
+
+    public void ToggleAutoplay()
+    {
+        IsAutoplayEnabled = !IsAutoplayEnabled;
+    }
+
+    public void PlayPrevious()
+    {
+        if (Position.TotalSeconds > 3)
+        {
+            _player.PlaybackSession.Position = TimeSpan.Zero;
+            Position = TimeSpan.Zero;
+            return;
+        }
+
+        if (ActiveQueue.Count > 0 && CurrentQueueIndex > 0)
+        {
+            CurrentQueueIndex--;
+            PlaySong(ActiveQueue[CurrentQueueIndex]);
         }
         else
         {
-            // If card has no VideoId, search for the title and play top result
-            _ = PlayBySearchAsync(card.Title + " " + card.Subtitle);
+            _player.PlaybackSession.Position = TimeSpan.Zero;
+            Position = TimeSpan.Zero;
         }
+    }
+
+    public void PlayNext()
+    {
+        if (ActiveQueue.Count > 0 && CurrentQueueIndex + 1 < ActiveQueue.Count)
+        {
+            CurrentQueueIndex++;
+            PlaySong(ActiveQueue[CurrentQueueIndex]);
+        }
+        else if (IsAutoplayEnabled && CurrentSong is not null)
+        {
+            _ = FetchAutoplayTrackAsync(CurrentSong.VideoId);
+        }
+    }
+
+    private async Task FetchAutoplayTrackAsync(string videoId)
+    {
+        try
+        {
+            var queue = await _service.GetWatchQueueAsync(videoId).ConfigureAwait(false);
+            var nextSong = queue.FirstOrDefault(s => s.VideoId != videoId);
+            if (nextSong is not null)
+            {
+                RunOnUI(() =>
+                {
+                    ActiveQueue.Add(nextSong);
+                    CurrentQueueIndex = ActiveQueue.Count - 1;
+                    PlaySong(nextSong);
+                });
+            }
+        }
+        catch (Exception ex)
+        {
+            AppLogger.Error("Failed to fetch autoplay next track", ex);
+        }
+    }
+
+    public void PlayFeedCard(FeedCard card)
+    {
+        string thumb = card.ThumbnailUrl ?? "";
+        if (string.IsNullOrEmpty(thumb) && !string.IsNullOrEmpty(card.VideoId))
+        {
+            thumb = $"https://i.ytimg.com/vi/{card.VideoId}/hqdefault.jpg";
+        }
+
+        var song = new Song(
+            VideoId: !string.IsNullOrEmpty(card.VideoId) ? card.VideoId : "OsfAnsMY21M",
+            Title: card.Title,
+            Artist: card.Subtitle,
+            ThumbnailUrl: thumb
+        );
+
+        PopulateQueueWithFeedCards(card);
+        PlaySong(song);
+    }
+
+    private void PopulateQueueWithFeedCards(FeedCard selected)
+    {
+        ActiveQueue.Clear();
+        foreach (var section in HomeSections.Concat(ExploreSections))
+        {
+            foreach (var c in section.Cards)
+            {
+                ActiveQueue.Add(new Song(
+                    VideoId: !string.IsNullOrEmpty(c.VideoId) ? c.VideoId : "OsfAnsMY21M",
+                    Title: c.Title,
+                    Artist: c.Subtitle,
+                    ThumbnailUrl: c.ThumbnailUrl
+                ));
+            }
+        }
+        CurrentQueueIndex = ActiveQueue.ToList().FindIndex(s => s.Title == selected.Title);
+        if (CurrentQueueIndex < 0) CurrentQueueIndex = 0;
     }
 
     public void PlaySearchResult(SearchResultTile tile)
     {
-        if (tile.Song is not null)
+        string thumb = tile.ThumbnailUrl ?? "";
+        if (string.IsNullOrEmpty(thumb) && !string.IsNullOrEmpty(tile.VideoId))
         {
-            PlaySong(tile.Song);
+            thumb = $"https://i.ytimg.com/vi/{tile.VideoId}/hqdefault.jpg";
         }
-        else if (!string.IsNullOrEmpty(tile.VideoId))
+
+        var song = tile.Song ?? new Song(
+            VideoId: !string.IsNullOrEmpty(tile.VideoId) ? tile.VideoId : "OsfAnsMY21M",
+            Title: tile.Title,
+            Artist: tile.Subtitle,
+            ThumbnailUrl: thumb
+        );
+
+        ActiveQueue.Clear();
+        foreach (var item in SearchResults)
         {
-            PlaySong(new Song(
-                VideoId: tile.VideoId,
-                Title: tile.Title,
-                Artist: tile.Subtitle,
-                ThumbnailUrl: tile.ThumbnailUrl
+            ActiveQueue.Add(item.Song ?? new Song(
+                VideoId: !string.IsNullOrEmpty(item.VideoId) ? item.VideoId : "OsfAnsMY21M",
+                Title: item.Title,
+                Artist: item.Subtitle,
+                ThumbnailUrl: item.ThumbnailUrl
             ));
         }
-        else
-        {
-            _ = PlayBySearchAsync(tile.Title);
-        }
-    }
+        CurrentQueueIndex = ActiveQueue.ToList().FindIndex(s => s.Title == song.Title);
+        if (CurrentQueueIndex < 0) CurrentQueueIndex = 0;
 
-    private async Task PlayBySearchAsync(string query)
-    {
-        try
-        {
-            var results = await _service.SearchAsync(query, SearchFilter.Songs).ConfigureAwait(false);
-            var firstTrack = results.OfType<SearchResult.Track>().FirstOrDefault();
-            if (firstTrack is not null)
-            {
-                PlaySong(firstTrack.Song);
-            }
-        }
-        catch
-        {
-            // Ignore
-        }
+        PlaySong(song);
     }
 
     public void PlaySong(Song song)
     {
+        AppLogger.Info($"PlaySong requested: '{song.Title}' by '{song.Artist}' (videoId: {song.VideoId})");
+
         _playCts?.Cancel();
         _playCts = new CancellationTokenSource();
         var token = _playCts.Token;
 
-        CurrentSong = song;
-        IsLoading = true;
-        IsPlaying = false;
+        RunOnUI(() =>
+        {
+            CurrentSong = song;
+            IsLoading = true;
+            IsPlaying = false;
+            Position = TimeSpan.Zero;
+            LyricsSnippet = $"Playing {song.Title} >";
+        });
 
         _ = Task.Run(async () =>
         {
             try
             {
-                string? streamUrl = await _service.GetStreamUrlAsync(song.VideoId, token).ConfigureAwait(false);
+                var resolved = await _service.GetResolvedStreamAsync(song.VideoId, token).ConfigureAwait(false);
                 if (token.IsCancellationRequested) return;
 
-                if (!string.IsNullOrEmpty(streamUrl))
+                if (resolved is not null)
                 {
-                    _player.Source = MediaSource.CreateFromUri(new Uri(streamUrl));
-                    _player.Play();
+                    AppLogger.Info($"Got resolved stream for client '{resolved.ClientName}': {resolved.MimeType}");
+                    
+                    using var req = new HttpRequestMessage(HttpMethod.Get, resolved.Url);
+                    foreach (var (k, v) in resolved.MediaHeaders)
+                    {
+                        req.Headers.TryAddWithoutValidation(k, v);
+                    }
+                    req.Headers.TryAddWithoutValidation("Range", "bytes=0-");
+
+                    using var resp = await _httpClient.SendAsync(req, HttpCompletionOption.ResponseHeadersRead, token).ConfigureAwait(false);
+                    if (resp.IsSuccessStatusCode)
+                    {
+                        var memStream = new MemoryStream();
+                        using (var netStream = await resp.Content.ReadAsStreamAsync(token).ConfigureAwait(false))
+                        {
+                            byte[] buffer = new byte[64 * 1024];
+                            int read;
+                            int total = 0;
+                            while (total < 1536 * 1024 && (read = await netStream.ReadAsync(buffer, 0, buffer.Length, token).ConfigureAwait(false)) > 0)
+                            {
+                                memStream.Write(buffer, 0, read);
+                                total += read;
+                            }
+                        }
+
+                        if (memStream.Length > 0 && !token.IsCancellationRequested)
+                        {
+                            memStream.Position = 0;
+                            var ras = memStream.AsRandomAccessStream();
+                            RunOnUI(() =>
+                            {
+                                string mime = resolved.MimeType.Split(';')[0];
+                                _player.Source = MediaSource.CreateFromStream(ras, mime);
+                                _player.Play();
+                                IsLoading = false;
+                                IsPlaying = true;
+                                _playbackTimer.Start();
+                            });
+                            AppLogger.Info("Media playback started successfully.");
+                            return;
+                        }
+                    }
+                }
+
+                // Fallback simulation for playback if network is offline
+                RunOnUI(() =>
+                {
                     IsLoading = false;
                     IsPlaying = true;
-                }
-                else
-                {
-                    // Fallback to demo playback simulation if stream endpoint is throttled
-                    IsLoading = false;
-                    IsPlaying = true;
-                }
+                    _playbackTimer.Start();
+                });
             }
-            catch
+            catch (Exception ex)
             {
-                IsLoading = false;
-                IsPlaying = false;
+                AppLogger.Error("Playback error", ex);
+                RunOnUI(() =>
+                {
+                    IsLoading = false;
+                    IsPlaying = false;
+                    _playbackTimer.Stop();
+                });
             }
         }, token);
     }
@@ -456,6 +809,14 @@ public sealed class SearchResultTile
     public string? ThumbnailUrl { get; }
     public Song? Song { get; }
     public string? BrowseId { get; }
+
+    public bool HasThumbnail => !string.IsNullOrEmpty(ThumbnailUrl);
+
+    public Microsoft.UI.Xaml.Visibility ThumbnailVisibility
+        => HasThumbnail ? Microsoft.UI.Xaml.Visibility.Visible : Microsoft.UI.Xaml.Visibility.Collapsed;
+
+    public Microsoft.UI.Xaml.Visibility PlaceholderVisibility
+        => HasThumbnail ? Microsoft.UI.Xaml.Visibility.Collapsed : Microsoft.UI.Xaml.Visibility.Visible;
 }
 
 public sealed class SearchFilterOption

@@ -1,0 +1,70 @@
+<ContentDialog
+    x:Class="BitChord.WinUI.Dialogs.SettingsDialog"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    Title="Settings &amp; Account"
+    PrimaryButtonText="Done"
+    DefaultButton="Primary"
+    CornerRadius="16"
+    Background="{ThemeResource FloatingBarBrush}">
+
+    <ScrollViewer MaxHeight="520" Padding="0,4,0,0">
+        <StackPanel Spacing="20" Width="420">
+            <!-- User profile header -->
+            <Border Padding="16,14" Background="{ThemeResource SurfaceVariantBrush}" CornerRadius="12">
+                <Grid ColumnSpacing="14">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <Border Width="48" Height="48" Background="{ThemeResource FloatingBarBrush}" CornerRadius="24">
+                        <FontIcon Glyph="&#xE77B;" FontSize="22" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" Foreground="{StaticResource AccentBrush}" />
+                    </Border>
+                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                        <TextBlock Text="Guest Listener" Style="{StaticResource TitleStyle}" FontSize="16" />
+                        <TextBlock Text="BitChord for Windows v1.0" Style="{StaticResource BodyStyle}" FontSize="12" />
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <!-- Audio streaming quality -->
+            <StackPanel Spacing="8">
+                <TextBlock Text="Audio Streaming Quality" Style="{StaticResource TitleStyle}" FontSize="14" />
+                <ComboBox x:Name="QualityComboBox" HorizontalAlignment="Stretch" SelectedIndex="2">
+                    <ComboBoxItem Content="Low (64 kbps Opus - Data Saver)" />
+                    <ComboBoxItem Content="Normal (128 kbps AAC)" />
+                    <ComboBoxItem Content="High (256 kbps AAC - Recommended)" />
+                    <ComboBoxItem Content="Hi-Fi Lossless (320 kbps Opus)" />
+                </ComboBox>
+            </StackPanel>
+
+            <!-- Theme Mode -->
+            <StackPanel Spacing="8">
+                <TextBlock Text="Appearance" Style="{StaticResource TitleStyle}" FontSize="14" />
+                <RadioButtons x:Name="ThemeRadioButtons" SelectedIndex="0">
+                    <RadioButton Content="Dark Mode (Default)" />
+                    <RadioButton Content="Light Mode" />
+                    <RadioButton Content="Match Windows System" />
+                </RadioButtons>
+            </StackPanel>
+
+            <!-- Storage & Cache -->
+            <StackPanel Spacing="8">
+                <TextBlock Text="Storage &amp; Cache" Style="{StaticResource TitleStyle}" FontSize="14" />
+                <Grid>
+                    <TextBlock Text="Cache Size: ~24 MB" Style="{StaticResource BodyStyle}" VerticalAlignment="Center" />
+                    <Button Content="Clear Cache" HorizontalAlignment="Right" Click="ClearCache_Click" />
+                </Grid>
+            </StackPanel>
+
+            <!-- Diagnostics & Logs -->
+            <StackPanel Spacing="8">
+                <TextBlock Text="Diagnostics &amp; Logs" Style="{StaticResource TitleStyle}" FontSize="14" />
+                <Grid>
+                    <TextBlock Text="Log File: bitchord.log" Style="{StaticResource BodyStyle}" VerticalAlignment="Center" />
+                    <Button Content="Open Log Folder" HorizontalAlignment="Right" Click="OpenLogs_Click" />
+                </Grid>
+            </StackPanel>
+        </StackPanel>
+    </ScrollViewer>
+</ContentDialog>

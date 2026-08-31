@@ -30,6 +30,15 @@ internal static partial class InnertubeParser
 
         foreach ((string kind, JsonElement renderer) in EnumerateSearchRenderers(root))
         {
+            Song? song = kind == "musicResponsiveListItemRenderer"
+                ? ParseResponsiveSong(renderer, default)
+                : ParseCardSong(renderer);
+            if (song is not null && !song.IsVideo && seen.Add("v:" + song.VideoId))
+            {
+                results.Add(new SearchResult.Track(song));
+                continue;
+            }
+
             BrowseItem? browse = kind == "musicResponsiveListItemRenderer"
                 ? ParseResponsiveBrowseItem(renderer)
                 : ParseCardBrowseItem(renderer);
@@ -40,14 +49,6 @@ internal static partial class InnertubeParser
                     results.Add(new SearchResult.Browse(browse));
                 }
                 continue;
-            }
-
-            Song? song = kind == "musicResponsiveListItemRenderer"
-                ? ParseResponsiveSong(renderer, default)
-                : ParseCardSong(renderer);
-            if (song is not null && !song.IsVideo && seen.Add("v:" + song.VideoId))
-            {
-                results.Add(new SearchResult.Track(song));
             }
         }
 
@@ -383,6 +384,11 @@ internal static partial class InnertubeParser
         JsonElement? endpoint = Property(renderer, "navigationEndpoint");
         string? browseId = endpoint is null ? null : StringAt(endpoint.Value, "browseEndpoint", "browseId");
         string? videoId = endpoint is null ? null : StringAt(endpoint.Value, "watchEndpoint", "videoId");
+        if (string.IsNullOrEmpty(videoId))
+        {
+            videoId = StringAt(renderer, "thumbnailOverlay", "musicItemThumbnailOverlayRenderer", "content", "musicPlayButtonRenderer", "playNavigationEndpoint", "watchEndpoint", "videoId")
+                ?? StringAt(renderer, "overlay", "musicItemThumbnailOverlayRenderer", "content", "musicPlayButtonRenderer", "playNavigationEndpoint", "watchEndpoint", "videoId");
+        }
         if (videoId is null && browseId?.StartsWith("MPED", StringComparison.Ordinal) == true)
         {
             videoId = browseId[4..];
@@ -468,7 +474,7 @@ internal static partial class InnertubeParser
             title,
             subtitle,
             BestThumbnail(renderer),
-            BrowseTypeOf(endpoint.Value, browseId));
+            BrowseTypeOf(endpoint.GetValueOrDefault(), browseId));
     }
 
     private static Song? ParseResponsiveSong(JsonElement renderer, Credits fallback)

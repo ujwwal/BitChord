@@ -46,11 +46,12 @@ public sealed partial class SearchView : UserControl
 
             var chip = new Border
             {
-                Padding = new Thickness(12, 6, 12, 6),
+                Padding = new Thickness(14, 6, 14, 6),
                 CornerRadius = new CornerRadius(14),
                 Child = label,
                 Tag = option.Filter,
                 IsHitTestVisible = true,
+                Background = (SolidColorBrush)Application.Current.Resources["SurfaceVariantBrush"]
             };
 
             chip.Tapped += OnFilterChipTapped;
@@ -148,6 +149,15 @@ public sealed partial class SearchView : UserControl
     private void ResultsList_ItemClick(object sender, ItemClickEventArgs e)
     {
         if (e.ClickedItem is SearchResultTile tile)
+        {
+            ResultClicked?.Invoke(tile);
+            ViewModel.PlaySearchResult(tile);
+        }
+    }
+
+    private void PlayButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is FrameworkElement fe && fe.DataContext is SearchResultTile tile)
         {
             ResultClicked?.Invoke(tile);
             ViewModel.PlaySearchResult(tile);

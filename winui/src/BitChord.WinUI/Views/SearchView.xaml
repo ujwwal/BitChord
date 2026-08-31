@@ -4,24 +4,25 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:vm="using:BitChord.WinUI">
 
-    <Grid Padding="16,8,16,100">
+    <Grid Padding="24,12,24,130" HorizontalAlignment="Stretch">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
+        <!-- Search input box -->
         <AutoSuggestBox x:Name="SearchBox"
                         Grid.Row="0"
                         Height="46"
-                        Margin="0,0,0,8"
-                        Padding="8,0,12,0"
+                        Margin="0,0,0,10"
+                        Padding="10,0,14,0"
                         Background="{ThemeResource SurfaceVariantBrush}"
                         BorderThickness="0"
-                        CornerRadius="12"
+                        CornerRadius="14"
                         FontFamily="{StaticResource RegularFont}"
-                        FontSize="16"
-                        PlaceholderText="Search songs, albums, artists, playlists"
+                        FontSize="15"
+                        PlaceholderText="Search songs, albums, artists, playlists..."
                         ItemsSource="{x:Bind ViewModel.SearchSuggestions, Mode=OneWay}"
                         TextChanged="SearchBox_TextChanged"
                         QuerySubmitted="SearchBox_QuerySubmitted"
@@ -33,7 +34,7 @@
 
         <!-- Filter chips -->
         <ScrollViewer Grid.Row="1"
-                      Margin="0,4,0,12"
+                      Margin="0,2,0,14"
                       HorizontalScrollBarVisibility="Hidden"
                       VerticalScrollBarVisibility="Disabled">
             <StackPanel x:Name="FilterPanel" Orientation="Horizontal" Spacing="8" />
@@ -51,38 +52,64 @@
                     <Setter Property="Padding" Value="0" />
                     <Setter Property="Margin" Value="0,2" />
                     <Setter Property="HorizontalContentAlignment" Value="Stretch" />
-                    <Setter Property="CornerRadius" Value="8" />
+                    <Setter Property="CornerRadius" Value="10" />
                 </Style>
             </ListView.ItemContainerStyle>
             <ListView.ItemTemplate>
                 <DataTemplate x:DataType="vm:SearchResultTile">
-                    <Grid Padding="8,10" ColumnSpacing="12" Background="Transparent">
+                    <Grid Padding="10,8" ColumnSpacing="12" Background="Transparent">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto" />
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
-                        <Border Width="40" Height="40"
-                                Background="{ThemeResource SurfaceVariantBrush}"
-                                CornerRadius="8">
+
+                        <!-- Thumbnail / Music icon -->
+                        <Grid Width="46" Height="46">
+                            <Border Background="{ThemeResource SurfaceVariantBrush}" CornerRadius="10" />
                             <FontIcon Glyph="&#xE8D6;" FontSize="18"
+                                      FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
                                       Foreground="{StaticResource AccentBrush}"
                                       HorizontalAlignment="Center"
                                       VerticalAlignment="Center" />
-                        </Border>
+                            <Image Source="{x:Bind ThumbnailUrl, Mode=OneTime}"
+                                   Width="46" Height="46"
+                                   Stretch="UniformToFill">
+                                <Image.Clip>
+                                    <RectangleGeometry Rect="0,0,46,46" />
+                                </Image.Clip>
+                            </Image>
+                        </Grid>
+
                         <StackPanel Grid.Column="1" VerticalAlignment="Center">
                             <TextBlock Text="{x:Bind Title}"
                                        Style="{StaticResource TitleStyle}"
                                        FontSize="15"
-                                       TextTrimming="CharacterEllipsis" />
+                                       TextTrimming="CharacterEllipsis"
+                                       MaxLines="1" />
                             <TextBlock Text="{x:Bind Subtitle}"
                                        Style="{StaticResource BodyStyle}"
                                        FontSize="13"
-                                       TextTrimming="CharacterEllipsis" />
+                                       TextTrimming="CharacterEllipsis"
+                                       MaxLines="1" />
                         </StackPanel>
-                        <FontIcon Grid.Column="2" Glyph="&#xE768;" FontSize="14"
-                                  Foreground="{ThemeResource SecondaryTextBrush}"
-                                  VerticalAlignment="Center" Margin="0,0,4,0" />
+
+                        <!-- Play button -->
+                        <Button Grid.Column="2" Width="36" Height="36"
+                                Padding="0"
+                                Background="{ThemeResource SurfaceVariantBrush}"
+                                BorderThickness="0"
+                                CornerRadius="18"
+                                Click="PlayButton_Click"
+                                Tag="{x:Bind}"
+                                VerticalAlignment="Center"
+                                ToolTipService.ToolTip="Play">
+                            <FontIcon Glyph="&#xE768;" FontSize="13"
+                                      FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                      Foreground="{ThemeResource PrimaryTextBrush}"
+                                      HorizontalAlignment="Center"
+                                      VerticalAlignment="Center" />
+                        </Button>
                     </Grid>
                 </DataTemplate>
             </ListView.ItemTemplate>

@@ -1,3 +1,5 @@
+using BitChord.Core;
+using BitChord.WinUI.Dialogs;
 using BitChord.WinUI.Views;
 using Microsoft.UI;
 using Microsoft.UI.Windowing;
@@ -9,24 +11,30 @@ namespace BitChord.WinUI;
 public sealed partial class MainWindow : Window
 {
     private readonly AppShellViewModel _viewModel = new();
-    private readonly FeedView _homeView;
-    private readonly FeedView _exploreView;
-    private readonly LibraryView _libraryView;
-    private readonly SearchView _searchView;
+    private FeedView? _homeView;
+    private FeedView? _exploreView;
+    private LibraryView? _libraryView;
+    private SearchView? _searchView;
+    private NowPlayingView? _nowPlayingView;
     private int _selectedIndex = -1;
 
     public MainWindow()
     {
-        _homeView = new FeedView("Listen Now", _viewModel.HomeSections);
-        _exploreView = new FeedView("Explore", _viewModel.ExploreSections);
-        _libraryView = new LibraryView(_viewModel.LibraryTiles);
-        _searchView = new SearchView(_viewModel);
-
         InitializeComponent();
+
+        AppLogger.Info("Initializing MainWindow components...");
 
         ExtendsContentIntoTitleBar = true;
         SetTitleBar(AppTitleBar);
         ConfigureTitleBar();
+
+        // ── Now Playing View Setup ────────────────────────────────────────────
+        _nowPlayingView = new NowPlayingView(_viewModel);
+        _nowPlayingView.DismissRequested += () =>
+        {
+            NowPlayingHost.Visibility = Visibility.Collapsed;
+        };
+        NowPlayingHost.Children.Add(_nowPlayingView);
 
         // ── Tab selection ─────────────────────────────────────────────────────
         BottomBar.TabSelected += SelectTab;
@@ -36,30 +44,15 @@ public sealed partial class MainWindow : Window
             ConfigureTitleBar();
         };
 
-        // ── Click to Play Wiring ──────────────────────────────────────────────
-        _homeView.CardClicked += card => _viewModel.PlayFeedCard(card);
-        _exploreView.CardClicked += card => _viewModel.PlayFeedCard(card);
-        _searchView.ResultClicked += tile => _viewModel.PlaySearchResult(tile);
-        _libraryView.TileClicked += tile =>
-        {
-            // When a library tile is clicked, switch to search or query for that category
-            SelectTab(3);
-            _searchView.FocusSearchBox();
-        };
-
         // ── MiniPlayerBar ←→ ViewModel Wiring ────────────────────────────────
         _viewModel.PropertyChanged += OnViewModelPropertyChanged;
         MiniPlayer.PlayPauseClicked += (_, _) => _viewModel.TogglePlayPause();
-        MiniPlayer.NextClicked += (_, _) =>
+        MiniPlayer.NextClicked += (_, _) => _viewModel.PlayNext();
+        MiniPlayer.BarClicked += (_, _) =>
         {
-            // Skip to next item in home feed or queue
-            var firstCard = _viewModel.HomeSections.FirstOrDefault()?.Cards.FirstOrDefault();
-            if (firstCard is not null)
-            {
-                _viewModel.PlayFeedCard(firstCard);
-            }
+            // Open full-screen Now Playing view
+            NowPlayingHost.Visibility = Visibility.Visible;
         };
-        MiniPlayer.BarClicked += (_, _) => _viewModel.TogglePlayPause();
 
         Activated += OnActivated;
         SelectTab(0);
@@ -71,7 +64,7 @@ public sealed partial class MainWindow : Window
         {
             case nameof(AppShellViewModel.CurrentSong):
                 MiniPlayer.Song = _viewModel.CurrentSong;
-                MiniPlayer.Visibility = _viewModel.CurrentSong is not null
+                MiniPlayer.Visibility = _viewModel.CurrentSong is not null && NowPlayingHost.Visibility != Visibility.Visible
                     ? Visibility.Visible
                     : Visibility.Collapsed;
                 break;
@@ -89,7 +82,8 @@ public sealed partial class MainWindow : Window
     private void OnActivated(object sender, WindowActivatedEventArgs args)
     {
         Activated -= OnActivated;
-        AppWindow.Resize(new SizeInt32(500, 840));
+        AppLogger.Info("Resizing window to desktop dimensions: 1100x750");
+        AppWindow.Resize(new SizeInt32(1100, 750));
     }
 
     private void ConfigureTitleBar()
@@ -109,20 +103,24 @@ public sealed partial class MainWindow : Window
     {
         if (index == _selectedIndex)
         {
-            if (index == 3)
+            if (index == 3 && _searchView is not null)
                 _searchView.FocusSearchBox();
             return;
         }
 
+        AppLogger.Info($"Switching to tab index: {index}");
         _selectedIndex = index;
-        ContentHost.Content = index switch
+
+        UIElement activeView = index switch
         {
-            0 => _homeView,
-            1 => _exploreView,
-            2 => _libraryView,
-            3 => _searchView,
-            _ => _homeView,
+            0 => GetHomeView(),
+            1 => GetExploreView(),
+            2 => GetLibraryView(),
+            3 => GetSearchView(),
+            _ => GetHomeView(),
         };
+
+        ContentHost.Content = activeView;
 
         PageTitle.Text = index switch
         {
@@ -134,5 +132,66 @@ public sealed partial class MainWindow : Window
         };
         PageTitle.Opacity = index == 3 ? 1 : 0;
         BottomBar.SetSelectedIndex(index);
+    }
+
+    private FeedView GetHomeView()
+    {
+        if (_homeView is null)
+        {
+            _homeView = new FeedView("Listen Now", _viewModel.HomeSections);
+            _homeView.CardClicked += card => _viewModel.PlayFeedCard(card);
+        }
+        return _homeView;
+    }
+
+    private FeedView GetExploreView()
+    {
+        if (_exploreView is null)
+        {
+            _exploreView = new FeedView("Explore", _viewModel.ExploreSections);
+            _exploreView.CardClicked += card => _viewModel.PlayFeedCard(card);
+        }
+        return _exploreView;
+    }
+
+    private LibraryView GetLibraryView()
+    {
+        if (_libraryView is null)
+        {
+            _libraryView = new LibraryView(_viewModel.LibraryTiles);
+            _libraryView.TileClicked += _ =>
+            {
+                SelectTab(3);
+                _searchView?.FocusSearchBox();
+            };
+        }
+        return _libraryView;
+    }
+
+    private SearchView GetSearchView()
+    {
+        if (_searchView is null)
+        {
+            _searchView = new SearchView(_viewModel);
+            _searchView.ResultClicked += tile => _viewModel.PlaySearchResult(tile);
+        }
+        return _searchView;
+    }
+
+    private async void AccountButton_Click(object sender, RoutedEventArgs e)
+    {
+        AppLogger.Info("Opening Account and Settings dialog...");
+        try
+        {
+            var dialog = new SettingsDialog
+            {
+                XamlRoot = RootGrid.XamlRoot
+            };
+            await dialog.ShowAsync();
+        }
+        catch (Exception ex)
+        {
+            AppLogger.Error("Failed to display SettingsDialog", ex);
+        }
     }
 }

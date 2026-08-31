@@ -21,7 +21,7 @@
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
 
-            <!-- Artwork -->
+            <!-- Artwork thumbnail / placeholder -->
             <Grid Grid.Column="0" Width="38" Height="38">
                 <Border Background="{ThemeResource SurfaceVariantBrush}" CornerRadius="8" />
                 <Image x:Name="ArtworkImage"
@@ -32,7 +32,7 @@
                     </Image.Clip>
                 </Image>
                 <FontIcon x:Name="ArtworkPlaceholder"
-                          Glyph="&#xE87C;"
+                          Glyph="&#xE8D6;"
                           FontSize="18"
                           FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
                           Foreground="{StaticResource AccentBrush}"
@@ -54,7 +54,7 @@
                            MaxLines="1" />
             </StackPanel>
 
-            <!-- Play / Pause (or loading spinner) -->
+            <!-- Play / Pause (or loading ring) -->
             <Grid Grid.Column="2" Width="36" Height="36">
                 <ProgressRing x:Name="LoadingRing"
                               Width="20" Height="20"
