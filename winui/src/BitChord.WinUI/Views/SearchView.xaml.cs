@@ -151,7 +151,6 @@ public sealed partial class SearchView : UserControl
         if (e.ClickedItem is SearchResultTile tile)
         {
             ResultClicked?.Invoke(tile);
-            ViewModel.PlaySearchResult(tile);
         }
     }
 
@@ -160,7 +159,6 @@ public sealed partial class SearchView : UserControl
         if (sender is FrameworkElement fe && fe.DataContext is SearchResultTile tile)
         {
             ResultClicked?.Invoke(tile);
-            ViewModel.PlaySearchResult(tile);
         }
     }
 
@@ -169,3 +167,4 @@ public sealed partial class SearchView : UserControl
         DispatcherQueue.TryEnqueue(() => SearchBox.Focus(FocusState.Programmatic));
     }
 }
+
